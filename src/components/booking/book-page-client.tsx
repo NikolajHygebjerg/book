@@ -33,7 +33,7 @@ export function BookPageClient({
           )}
           {hasUnlimitedSubscription && (
             <p className="mt-2 text-sm text-brand bg-brand-light rounded-full inline-block px-4 py-1">
-              Ubegrænset abonnement — alle timer er gratis
+              Ubegrænset abonnement for dig — medgæster betaler fuld pris
             </p>
           )}
         </div>

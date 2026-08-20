@@ -56,13 +56,17 @@ export function calculateBookingPrice(
 
   const subscriptionHoursUsed = Math.min(hours, subscriptionHoursAvailable);
   const extraHours = hours - subscriptionHoursUsed;
+  const guestCount = Math.max(0, persons - 1);
 
-  const fullBundleOre = getBundlePriceOre(hours, settings) * persons;
-  const coveredBundleOre =
+  const bundlePriceOre = getBundlePriceOre(hours, settings);
+  const coveredBundlePriceOre =
     subscriptionHoursUsed > 0
-      ? getBundlePriceOre(subscriptionHoursUsed, settings) * persons
+      ? getBundlePriceOre(subscriptionHoursUsed, settings)
       : 0;
-  const extraPriceOre = fullBundleOre - coveredBundleOre;
+
+  const bookerPriceOre = bundlePriceOre - coveredBundlePriceOre;
+  const guestPriceOre = bundlePriceOre * guestCount;
+  const extraPriceOre = bookerPriceOre + guestPriceOre;
 
   const potteryWheelPriceOre = calculatePotteryWheelPriceOre(
     potteryWheelReservations,
@@ -74,13 +78,25 @@ export function calculateBookingPrice(
   const breakdown: string[] = [];
 
   if (subscriptionHoursUsed > 0) {
-    breakdown.push(`${subscriptionHoursUsed} timer dækket af abonnement`);
+    breakdown.push(`${subscriptionHoursUsed} timer dækket af abonnement (dig)`);
   }
-  if (extraHours > 0) {
+
+  if (bookerPriceOre > 0) {
+    if (extraHours > 0 && subscriptionHoursUsed > 0) {
+      breakdown.push(
+        `${extraHours} timer uden abonnement (dig) = ${formatDKK(bookerPriceOre)}`
+      );
+    } else {
+      breakdown.push(`${hours} timer (dig) = ${formatDKK(bookerPriceOre)}`);
+    }
+  }
+
+  if (guestCount > 0) {
     breakdown.push(
-      `${formatBookingDurationLabel(hours, subscriptionHoursUsed, persons, settings)} = ${formatDKK(extraPriceOre)}`
+      `${hours} timer × ${guestCount} ekstra person(er) = ${formatDKK(guestPriceOre)}`
     );
   }
+
   if (potteryWheelReservations.length > 0) {
     breakdown.push(
       `Drejeskive: ${potteryWheelReservations.length} stk. reserveret = ${formatDKK(potteryWheelPriceOre)}`
@@ -95,24 +111,6 @@ export function calculateBookingPrice(
     totalPriceOre,
     breakdown,
   };
-}
-
-function formatBookingDurationLabel(
-  totalHours: number,
-  coveredHours: number,
-  persons: number,
-  settings: PricingSettings
-): string {
-  if (coveredHours > 0) {
-    return `${totalHours} timer (${coveredHours} via abonnement) × ${persons} person(er)`;
-  }
-
-  const bundle = settings.bookingHourPrices[totalHours];
-  if (bundle !== undefined) {
-    return `${totalHours} timer × ${persons} person(er) (${formatDKK(bundle)}/pers.)`;
-  }
-
-  return `${totalHours} timer × ${persons} person(er)`;
 }
 
 export function getSubscriptionMonthlyLimit(

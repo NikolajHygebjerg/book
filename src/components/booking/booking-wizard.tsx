@@ -222,6 +222,12 @@ export function BookingWizard({
             <p className="text-stone-500 text-sm">
               Max {WORKSHOP_CONFIG.maxCapacity} personer i værkstedet ad gangen.
             </p>
+            {persons > 1 && (
+              <p className="text-sm text-amber-800 bg-amber-50 rounded-xl px-4 py-3">
+                Abonnement gælder kun dig. Ekstra personer betaler fuld timepris og kan ikke
+                bruge abonnement.
+              </p>
+            )}
             <div className="flex gap-3 flex-wrap">
               {Array.from({ length: 10 }, (_, i) => i + 1).map((p) => (
                 <button
@@ -337,6 +343,14 @@ export function BookingWizard({
                 </div>
               )}
             </div>
+
+            {pricing.breakdown.length > 0 && (
+              <ul className="space-y-1 rounded-xl bg-stone-50 p-3 text-sm text-stone-600">
+                {pricing.breakdown.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            )}
 
             <div className="flex justify-between text-lg font-semibold text-stone-900 px-1">
               <span>Total</span>
