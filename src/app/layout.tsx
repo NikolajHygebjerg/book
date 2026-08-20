@@ -34,11 +34,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="da" className={`${geist.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-stone-50 text-stone-900 antialiased">
+      <body className="min-h-full flex flex-col bg-white text-stone-900 antialiased">
         <AuthProvider>
           <Header />
           <main className="flex-1">{children}</main>
-          <footer className="border-t border-stone-200 bg-white py-6 text-center text-sm text-stone-500">
+          <footer className="border-t border-stone-100 bg-white py-6 text-center text-sm text-stone-500">
             <p>Ravnen 5, 8410 Rønde</p>
           </footer>
         </AuthProvider>

@@ -7,6 +7,8 @@ import { canAccommodate } from "@/lib/capacity";
 import { calculateBookingPrice } from "@/lib/pricing";
 import { getAvailableSubscriptionHours } from "@/lib/subscription";
 import { getStripe } from "@/lib/stripe";
+import { findNextAvailableSlot } from "@/lib/find-next-slot";
+import { toDateInputValue, toTimeInputValue } from "@/lib/booking-slots";
 
 const bookingSchema = z.object({
   hours: z.number().int().min(1).max(24),
@@ -135,9 +137,42 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const startTime = searchParams.get("startTime");
   const hours = parseInt(searchParams.get("hours") ?? "1", 10);
   const persons = parseInt(searchParams.get("persons") ?? "1", 10);
+
+  if (searchParams.get("nextAvailable") === "true") {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Du skal være logget ind" }, { status: 401 });
+    }
+
+    const slot = await findNextAvailableSlot(hours, persons, async (from, to) =>
+      db.booking.findMany({
+        where: {
+          status: "CONFIRMED",
+          startTime: { lt: to },
+          endTime: { gt: from },
+        },
+        select: {
+          startTime: true,
+          endTime: true,
+          persons: true,
+        },
+      })
+    );
+
+    if (!slot) {
+      return NextResponse.json({ error: "Ingen ledige tider de næste 14 dage" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      startTime: slot.toISOString(),
+      date: toDateInputValue(slot),
+      time: toTimeInputValue(slot),
+    });
+  }
+
+  const startTime = searchParams.get("startTime");
 
   if (!startTime) {
     return NextResponse.json({ error: "startTime påkrævet" }, { status: 400 });

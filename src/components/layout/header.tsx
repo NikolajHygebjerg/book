@@ -7,7 +7,7 @@ export async function Header() {
   const session = await auth();
 
   return (
-    <header className="border-b border-stone-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-stone-100 bg-white sticky top-0 z-50">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Logo size="sm" priority />
 

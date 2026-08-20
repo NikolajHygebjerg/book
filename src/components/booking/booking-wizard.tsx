@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { format, addHours } from "date-fns";
 import { da } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Users, Clock, Calendar, CircleDot, Check } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { PRICING, WORKSHOP_CONFIG, formatDKK } from "@/lib/config";
 import { calculateBookingPrice } from "@/lib/pricing";
+import {
+  getNextHourSlot,
+  getMinTimeForDate,
+  toDateInputValue,
+  toTimeInputValue,
+} from "@/lib/booking-slots";
 
 type OccupancySlot = {
   hour: string;
@@ -16,30 +23,69 @@ type OccupancySlot = {
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
-const STEPS = [
-  { num: 1, label: "Timer", icon: Clock },
-  { num: 2, label: "Personer", icon: Users },
-  { num: 3, label: "Dato & tid", icon: Calendar },
-  { num: 4, label: "Tilvalg", icon: CircleDot },
-  { num: 5, label: "Oversigt", icon: Check },
-  { num: 6, label: "Betaling", icon: Check },
-] as const;
+const STEPS = ["Timer", "Personer", "Dato", "Tilvalg", "Oversigt"] as const;
+
+const basisPlan = PRICING.subscriptions.BASIS;
 
 export function BookingWizard({
   subscriptionHoursAvailable = 0,
+  onStepChange,
 }: {
   subscriptionHoursAvailable?: number;
+  onStepChange?: (step: Step) => void;
 }) {
   const [step, setStep] = useState<Step>(1);
   const [hours, setHours] = useState(2);
   const [persons, setPersons] = useState(1);
   const [date, setDate] = useState("");
-  const [time, setTime] = useState("10:00");
+  const [time, setTime] = useState("");
   const [hasPotteryWheel, setHasPotteryWheel] = useState(false);
   const [occupancy, setOccupancy] = useState<OccupancySlot[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
   const [error, setError] = useState("");
   const [canBook, setCanBook] = useState(true);
+
+  const loadNextAvailableSlot = useCallback(async () => {
+    setLoadingSuggestion(true);
+    setError("");
+
+    try {
+      const params = new URLSearchParams({
+        nextAvailable: "true",
+        hours: String(hours),
+        persons: String(persons),
+      });
+      const res = await fetch(`/api/bookings?${params}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        setDate(data.date);
+        setTime(data.time);
+        return;
+      }
+
+      const fallback = getNextHourSlot();
+      setDate(toDateInputValue(fallback));
+      setTime(toTimeInputValue(fallback));
+    } catch {
+      const fallback = getNextHourSlot();
+      setDate(toDateInputValue(fallback));
+      setTime(toTimeInputValue(fallback));
+    } finally {
+      setLoadingSuggestion(false);
+    }
+  }, [hours, persons]);
+
+  useEffect(() => {
+    onStepChange?.(step);
+  }, [step, onStepChange]);
+
+  useEffect(() => {
+    if (step === 3) {
+      loadNextAvailableSlot();
+    }
+  }, [step, loadNextAvailableSlot]);
 
   const startTime = date && time ? new Date(`${date}T${time}:00`) : null;
   const endTime = startTime ? addHours(startTime, hours) : null;
@@ -122,27 +168,29 @@ export function BookingWizard({
     }
   };
 
+  const maxOccupied = occupancy.reduce((max, slot) => Math.max(max, slot.occupied), 0);
+  const hasSpace = occupancy.every((slot) => !slot.isFull && slot.occupied + persons <= WORKSHOP_CONFIG.maxCapacity);
+
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Progress */}
-      <div className="mb-8 flex items-center justify-between">
-        {STEPS.slice(0, 5).map(({ num, label, icon: Icon }) => (
-          <div key={num} className="flex flex-col items-center gap-1 flex-1">
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors ${
-                step >= num
-                  ? "border-brand bg-brand text-white"
-                  : "border-stone-200 text-stone-400"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-            </div>
-            <span className="text-xs text-stone-500 hidden sm:block">{label}</span>
-          </div>
-        ))}
-      </div>
+      {step < 5 && (
+        <div className="mb-6 flex items-center gap-1">
+          {STEPS.slice(0, 4).map((label, i) => {
+            const num = (i + 1) as Step;
+            return (
+              <div key={label} className="flex flex-1 items-center gap-1">
+                <div
+                  className={`h-1.5 flex-1 rounded-full ${
+                    step >= num ? "bg-brand" : "bg-stone-200"
+                  }`}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+      <div className={`rounded-2xl border border-stone-200 bg-white shadow-sm ${step === 5 ? "p-4" : "p-6"}`}>
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-stone-900">Hvor mange timer vil du booke?</h2>
@@ -194,6 +242,13 @@ export function BookingWizard({
         {step === 3 && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-stone-900">Vælg dato og starttid</h2>
+            {loadingSuggestion ? (
+              <p className="text-sm text-stone-500">Finder næste ledige tid...</p>
+            ) : (
+              <p className="text-sm text-stone-500">
+                Vi foreslår næste ledige tid — du kan ændre den hvis du vil.
+              </p>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">Dato</label>
@@ -202,7 +257,8 @@ export function BookingWizard({
                   value={date}
                   min={format(new Date(), "yyyy-MM-dd")}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
+                  disabled={loadingSuggestion}
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light disabled:opacity-50"
                 />
               </div>
               <div>
@@ -210,8 +266,10 @@ export function BookingWizard({
                 <input
                   type="time"
                   value={time}
+                  min={date ? getMinTimeForDate(date) : undefined}
                   onChange={(e) => setTime(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
+                  disabled={loadingSuggestion}
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light disabled:opacity-50"
                 />
               </div>
             </div>
@@ -255,13 +313,11 @@ export function BookingWizard({
         )}
 
         {step === 5 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-stone-900">Oversigt</h2>
-
-            <div className="space-y-3 rounded-xl bg-stone-50 p-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-stone-500">Dato & tid</span>
-                <span className="font-medium text-stone-900">
+          <div className="space-y-3">
+            <div className="space-y-2 rounded-xl bg-stone-50 p-3 text-sm">
+              <div className="flex justify-between gap-4">
+                <span className="text-stone-500 shrink-0">Dato & tid</span>
+                <span className="font-medium text-stone-900 text-right">
                   {startTime &&
                     format(startTime, "d. MMM yyyy 'kl.' HH:mm", { locale: da })}
                 </span>
@@ -280,82 +336,30 @@ export function BookingWizard({
                   <span className="font-medium text-stone-900">Ja</span>
                 </div>
               )}
+              {occupancy.length > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-stone-500">Belægning</span>
+                  <span className={`font-medium text-right ${hasSpace ? "text-green-700" : "text-red-700"}`}>
+                    {maxOccupied}/{WORKSHOP_CONFIG.maxCapacity} personer
+                    {hasSpace ? " — plads til jer" : ""}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Belægning */}
-            {occupancy.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-stone-700">Belægning i perioden</p>
-                <div className="grid gap-1 max-h-40 overflow-y-auto">
-                  {occupancy.map((slot) => (
-                    <div
-                      key={slot.hour}
-                      className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
-                        slot.isFull
-                          ? "bg-red-50 text-red-700"
-                          : slot.occupied + persons > 7
-                            ? "bg-brand-light text-brand-dark"
-                            : "bg-green-50 text-green-800"
-                      }`}
-                    >
-                      <span>
-                        {format(new Date(slot.hour), "HH:mm", { locale: da })}
-                      </span>
-                      <span>
-                        {slot.occupied}/{WORKSHOP_CONFIG.maxCapacity} personer
-                        {!slot.isFull && slot.occupied + persons <= WORKSHOP_CONFIG.maxCapacity && (
-                          <span className="ml-2 opacity-70">— plads til jer ✓</span>
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="flex justify-between text-lg font-semibold text-stone-900 px-1">
+              <span>Total</span>
+              <span>{formatDKK(pricing.totalPriceOre)}</span>
+            </div>
+
+            {error && (
+              <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
             )}
 
-            <div className="border-t border-stone-200 pt-4 space-y-1">
-              {pricing.breakdown.map((line) => (
-                <p key={line} className="text-sm text-stone-600">{line}</p>
-              ))}
-              <div className="flex justify-between text-lg font-semibold text-stone-900 pt-2">
-                <span>Total</span>
-                <span>{formatDKK(pricing.totalPriceOre)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-        )}
-
-        <div className="mt-6 flex justify-between">
-          {step > 1 ? (
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-1 rounded-xl px-4 py-2 text-stone-600 hover:bg-stone-50 transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Tilbage
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {step < 5 ? (
-            <button
-              onClick={handleNext}
-              disabled={step === 3 && (!date || !time)}
-              className="flex items-center gap-1 rounded-xl bg-brand px-6 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
-            >
-              Næste
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          ) : (
             <button
               onClick={handleSubmit}
               disabled={loading || !canBook}
-              className="flex items-center gap-1 rounded-xl bg-brand px-6 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
+              className="w-full rounded-xl bg-brand py-3 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
             >
               {loading
                 ? "Behandler..."
@@ -363,8 +367,60 @@ export function BookingWizard({
                   ? "Bekræft booking"
                   : `Betal ${formatDKK(pricing.totalPriceOre)}`}
             </button>
-          )}
-        </div>
+
+            <div className="rounded-xl border border-brand-light bg-brand-light p-3 text-center">
+              <p className="text-sm text-stone-700">
+                Køb abonnement fra {formatDKK(basisPlan.monthlyPriceOre)}/md for{" "}
+                {basisPlan.hoursPerWeek} timer om ugen — tryk her
+              </p>
+              <Link
+                href="/min-side/abonnement"
+                className="mt-2 inline-block w-full rounded-xl bg-white border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light transition-colors"
+              >
+                Se abonnement
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {error && step !== 5 && (
+          <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        )}
+
+        {step !== 5 && (
+          <div className="mt-6 flex justify-between">
+            {step > 1 ? (
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-1 rounded-xl px-4 py-2 text-stone-600 hover:bg-stone-50 transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Tilbage
+              </button>
+            ) : (
+              <div />
+            )}
+
+            <button
+              onClick={handleNext}
+              disabled={step === 3 && (!date || !time || loadingSuggestion)}
+              className="flex items-center gap-1 rounded-xl bg-brand px-6 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
+            >
+              Næste
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {step === 5 && (
+          <button
+            onClick={handleBack}
+            className="mt-3 flex items-center gap-1 rounded-xl px-2 py-1 text-sm text-stone-500 hover:text-stone-800 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Tilbage
+          </button>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@
   "description": "Book tid i keramikværkstedet",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fafaf9",
+  "background_color": "#ffffff",
   "theme_color": "#f7a72e",
   "orientation": "portrait-primary",
   "lang": "da",
