@@ -11,7 +11,8 @@ const geist = Geist({
 
 export const metadata: Metadata = {
   title: "Begejstring — Åbent værksted",
-  description: "Book tid i keramikværkstedet. 10 pladser, døgnet rundt.",
+  description:
+    "Book tid i keramikværkstedet. 10 pladser, døgnet rundt (når der ikke er kurser i værkstedet).",
   manifest: "/manifest.json",
   icons: {
     icon: "/logo.png",

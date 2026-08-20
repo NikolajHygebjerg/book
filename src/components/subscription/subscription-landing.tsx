@@ -12,7 +12,7 @@ const PLAN_META: Record<SubscriptionPlanKey, { highlight: boolean }> = {
 const PLAN_ORDER: SubscriptionPlanKey[] = ["BASIS", "PLUS", "UNLIMITED"];
 
 const BENEFITS = [
-  "Book tid døgnet rundt — når det passer dig",
+  "Book tid døgnet rundt (når der ikke er kurser i værkstedet)",
   "Abonnementstimer trækkes automatisk ved booking",
   "Adgang til hele det åbne værksted",
   "Ingen binding — opsig når som helst",
@@ -39,7 +39,8 @@ export function SubscriptionLanding({
         </h1>
         <p className="mt-4 text-stone-600 text-lg">
           Med et abonnement får du faste timer hver måned i keramikværkstedet. Book når det
-          passer dig, og betal kun for det, abonnementet ikke dækker.
+          passer dig (når der ikke er kurser i værkstedet), og betal kun for det, abonnementet
+          ikke dækker.
         </p>
       </section>
 
@@ -77,7 +78,7 @@ export function SubscriptionLanding({
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 shrink-0 text-brand" />
-                  Book døgnet rundt
+                  Book døgnet rundt (når der ikke er kurser i værkstedet)
                 </li>
               </ul>
             </div>
