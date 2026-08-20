@@ -6,6 +6,7 @@ export const WORKSHOP_CONFIG = {
   bookingHourOptions: [1, 2, 3, 4, 5, 6, 12, 24] as const,
   minPersons: 1,
   maxPersons: 10,
+  maxPotteryWheels: 10,
   openHour: 0,
   closeHour: 24,
 } as const;

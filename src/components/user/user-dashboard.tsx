@@ -17,7 +17,7 @@ type UserData = {
     endTime: string;
     hours: number;
     persons: number;
-    hasPotteryWheel: boolean;
+    potteryWheels: number;
     totalPriceOre: number;
   }>;
 };
@@ -126,7 +126,8 @@ export function UserDashboard({ initialUser }: { initialUser: UserData }) {
                   </p>
                   <p className="text-stone-500">
                     {booking.hours} timer · {booking.persons} person(er)
-                    {booking.hasPotteryWheel && " · Drejeskive"}
+                    {booking.potteryWheels > 0 &&
+                      ` · ${booking.potteryWheels} drejeskive(r)`}
                   </p>
                 </div>
                 {booking.totalPriceOre > 0 && (

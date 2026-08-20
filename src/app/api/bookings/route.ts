@@ -20,7 +20,7 @@ const bookingSchema = z.object({
     .refine(isValidBookingHours, { message: "Ugyldigt antal timer" }),
   persons: z.number().int().min(1).max(10),
   startTime: z.string().datetime(),
-  hasPotteryWheel: z.boolean(),
+  potteryWheels: z.number().int().min(0).max(WORKSHOP_CONFIG.maxPotteryWheels),
 });
 
 export async function POST(request: Request) {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { hours, persons, startTime, hasPotteryWheel } = parsed.data;
+    const { hours, persons, startTime, potteryWheels } = parsed.data;
     const start = new Date(startTime);
 
     if (isBookingStartInPast(start)) {
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       {
         hours,
         persons,
-        hasPotteryWheel,
+        potteryWheels,
         subscriptionHoursAvailable: availableHours,
       },
       pricingSettings
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
         endTime: end,
         hours,
         persons,
-        hasPotteryWheel,
+        potteryWheels,
         subscriptionHoursUsed: pricing.subscriptionHoursUsed,
         extraHoursPaid: pricing.extraHours,
         totalPriceOre,
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
             currency: "dkk",
             product_data: {
               name: `Værkstedbooking — ${hours} timer`,
-              description: `${persons} person(er)${hasPotteryWheel ? " + drejeskive" : ""}`,
+              description: `${persons} person(er)${potteryWheels > 0 ? ` · ${potteryWheels} drejeskive(r)` : ""}`,
             },
             unit_amount: totalPriceOre,
           },

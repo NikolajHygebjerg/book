@@ -4,7 +4,7 @@ import { PricingSettings } from "./pricing-settings";
 export type BookingPriceInput = {
   hours: number;
   persons: number;
-  hasPotteryWheel: boolean;
+  potteryWheels: number;
   subscriptionHoursAvailable?: number;
 };
 
@@ -31,7 +31,7 @@ export function calculateBookingPrice(
   input: BookingPriceInput,
   settings: PricingSettings
 ): BookingPriceResult {
-  const { hours, persons, hasPotteryWheel, subscriptionHoursAvailable = 0 } = input;
+  const { hours, persons, potteryWheels, subscriptionHoursAvailable = 0 } = input;
 
   const subscriptionHoursUsed = Math.min(hours, subscriptionHoursAvailable);
   const extraHours = hours - subscriptionHoursUsed;
@@ -43,9 +43,10 @@ export function calculateBookingPrice(
       : 0;
   const extraPriceOre = fullBundleOre - coveredBundleOre;
 
-  const potteryWheelPriceOre = hasPotteryWheel
-    ? hours * settings.potteryWheelPerHourOre
-    : 0;
+  const potteryWheelPriceOre =
+    potteryWheels > 0
+      ? potteryWheels * hours * settings.potteryWheelPerHourOre
+      : 0;
 
   const totalPriceOre = extraPriceOre + potteryWheelPriceOre;
 
@@ -59,9 +60,9 @@ export function calculateBookingPrice(
       `${formatBookingDurationLabel(hours, subscriptionHoursUsed, persons, settings)} = ${formatDKK(extraPriceOre)}`
     );
   }
-  if (hasPotteryWheel) {
+  if (potteryWheels > 0) {
     breakdown.push(
-      `Drejeskive: ${hours} timer × ${formatDKK(settings.potteryWheelPerHourOre)} = ${formatDKK(potteryWheelPriceOre)}`
+      `Drejeskive: ${potteryWheels} stk. × ${hours} timer × ${formatDKK(settings.potteryWheelPerHourOre)} = ${formatDKK(potteryWheelPriceOre)}`
     );
   }
 

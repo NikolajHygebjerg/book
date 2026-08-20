@@ -99,7 +99,7 @@ model Booking {
   endTime          DateTime
   hours            Int
   persons          Int           @default(1)
-  hasPotteryWheel  Boolean       @default(false)
+  potteryWheels    Int           @default(0)
   status           BookingStatus @default(PENDING)
   subscriptionHoursUsed Int      @default(0)
   extraHoursPaid   Int           @default(0)

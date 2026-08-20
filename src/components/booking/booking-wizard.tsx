@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { format, addHours } from "date-fns";
 import { da } from "date-fns/locale";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { WORKSHOP_CONFIG, formatDKK, formatBookingHours, formatBookingHoursShort } from "@/lib/config";
 import { calculateBookingPrice } from "@/lib/pricing";
 import { PricingSettings } from "@/lib/pricing-settings";
@@ -43,7 +43,7 @@ export function BookingWizard({
   const [persons, setPersons] = useState(1);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [hasPotteryWheel, setHasPotteryWheel] = useState(false);
+  const [potteryWheels, setPotteryWheels] = useState(0);
   const [occupancy, setOccupancy] = useState<OccupancySlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -60,7 +60,7 @@ export function BookingWizard({
     {
       hours,
       persons,
-      hasPotteryWheel,
+      potteryWheels,
       subscriptionHoursAvailable,
     },
     pricingSettings
@@ -116,7 +116,7 @@ export function BookingWizard({
           hours,
           persons,
           startTime: startTime.toISOString(),
-          hasPotteryWheel,
+          potteryWheels,
         }),
       });
 
@@ -247,30 +247,30 @@ export function BookingWizard({
         {step === 4 && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-stone-900">Tilvalg</h2>
-            <button
-              onClick={() => setHasPotteryWheel(!hasPotteryWheel)}
-              className={`w-full rounded-xl border-2 p-4 text-left transition-colors ${
-                hasPotteryWheel
-                  ? "border-brand bg-brand-light"
-                  : "border-stone-200 hover:border-stone-300"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-stone-900">Drejeskive</p>
-                  <p className="text-sm text-stone-500">
-                    Reserver en drejeskive (+{formatDKK(pricingSettings.potteryWheelPerHourOre)}/time)
-                  </p>
-                </div>
-                <div
-                  className={`h-6 w-6 rounded-full border-2 flex items-center justify-center ${
-                    hasPotteryWheel ? "border-brand bg-brand" : "border-stone-300"
-                  }`}
-                >
-                  {hasPotteryWheel && <Check className="h-4 w-4 text-white" />}
-                </div>
+            <div>
+              <p className="font-medium text-stone-900">Drejeskive</p>
+              <p className="text-sm text-stone-500 mt-1">
+                {formatDKK(pricingSettings.potteryWheelPerHourOre)}/time pr. stk.
+              </p>
+              <div className="mt-4 flex gap-2 flex-wrap">
+                {Array.from({ length: WORKSHOP_CONFIG.maxPotteryWheels + 1 }, (_, i) => i).map(
+                  (count) => (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => setPotteryWheels(count)}
+                      className={`flex h-12 min-w-12 items-center justify-center rounded-xl px-3 text-lg font-medium transition-colors ${
+                        potteryWheels === count
+                          ? "bg-brand text-white"
+                          : "bg-stone-50 text-stone-700 hover:bg-stone-100"
+                      }`}
+                    >
+                      {count}
+                    </button>
+                  )
+                )}
               </div>
-            </button>
+            </div>
           </div>
         )}
 
@@ -292,10 +292,12 @@ export function BookingWizard({
                 <span className="text-stone-500">Personer</span>
                 <span className="font-medium text-stone-900">{persons}</span>
               </div>
-              {hasPotteryWheel && (
+              {potteryWheels > 0 && (
                 <div className="flex justify-between">
                   <span className="text-stone-500">Drejeskive</span>
-                  <span className="font-medium text-stone-900">Ja</span>
+                  <span className="font-medium text-stone-900">
+                    {potteryWheels} stk.
+                  </span>
                 </div>
               )}
               {occupancy.length > 0 && (

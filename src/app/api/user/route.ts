@@ -32,7 +32,7 @@ export async function GET() {
           endTime: true,
           hours: true,
           persons: true,
-          hasPotteryWheel: true,
+          potteryWheels: true,
           totalPriceOre: true,
         },
       },

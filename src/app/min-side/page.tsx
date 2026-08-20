@@ -25,7 +25,7 @@ export default async function MinSidePage() {
           endTime: true,
           hours: true,
           persons: true,
-          hasPotteryWheel: true,
+          potteryWheels: true,
           totalPriceOre: true,
         },
       },
