@@ -152,6 +152,7 @@ export async function POST(request: Request) {
     const stripeSession = await getStripe().checkout.sessions.create({
       mode: "payment",
       customer_email: session.user.email ?? undefined,
+      invoice_creation: { enabled: true },
       line_items: [
         {
           price_data: {
