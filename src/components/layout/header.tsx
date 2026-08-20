@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { User } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
 import { Logo } from "./logo";
 
 export async function Header() {
   const session = await auth();
+  const isAdmin = isAdminEmail(session?.user?.email);
 
   return (
     <header className="border-b border-stone-100 bg-white sticky top-0 z-50">
@@ -18,6 +20,14 @@ export async function Header() {
           >
             Abonnement
           </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="text-stone-500 hover:text-stone-900 transition-colors"
+            >
+              Admin
+            </Link>
+          )}
           {session?.user && (
             <Link
               href="/min-side"

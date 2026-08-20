@@ -6,12 +6,18 @@ import { db } from "@/lib/db";
 import { canAccommodate } from "@/lib/capacity";
 import { calculateBookingPrice } from "@/lib/pricing";
 import { getAvailableSubscriptionHours } from "@/lib/subscription";
+import { getPricingSettings } from "@/lib/pricing-settings";
+import { shouldUseZeroPricing, zeroPriceOre } from "@/lib/zero-pricing";
 import { getStripe } from "@/lib/stripe";
 import { findNextAvailableSlot } from "@/lib/find-next-slot";
 import { toDateInputValue, toTimeInputValue } from "@/lib/booking-slots";
+import { WORKSHOP_CONFIG, isValidBookingHours } from "@/lib/config";
 
 const bookingSchema = z.object({
-  hours: z.number().int().min(1).max(24),
+  hours: z
+    .number()
+    .int()
+    .refine(isValidBookingHours, { message: "Ugyldigt antal timer" }),
   persons: z.number().int().min(1).max(10),
   startTime: z.string().datetime(),
   hasPotteryWheel: z.boolean(),
@@ -60,12 +66,18 @@ export async function POST(request: Request) {
     const availableHours =
       subscriptionHoursAvailable === Infinity ? hours : subscriptionHoursAvailable;
 
-    const pricing = calculateBookingPrice({
-      hours,
-      persons,
-      hasPotteryWheel,
-      subscriptionHoursAvailable: availableHours,
-    });
+    const pricingSettings = await getPricingSettings();
+    const pricing = calculateBookingPrice(
+      {
+        hours,
+        persons,
+        hasPotteryWheel,
+        subscriptionHoursAvailable: availableHours,
+      },
+      pricingSettings
+    );
+
+    const totalPriceOre = zeroPriceOre(pricing.totalPriceOre, session.user.email);
 
     const booking = await db.booking.create({
       data: {
@@ -77,12 +89,12 @@ export async function POST(request: Request) {
         hasPotteryWheel,
         subscriptionHoursUsed: pricing.subscriptionHoursUsed,
         extraHoursPaid: pricing.extraHours,
-        totalPriceOre: pricing.totalPriceOre,
-        status: pricing.totalPriceOre === 0 ? "CONFIRMED" : "PENDING",
+        totalPriceOre,
+        status: totalPriceOre === 0 ? "CONFIRMED" : "PENDING",
       },
     });
 
-    if (pricing.totalPriceOre === 0) {
+    if (totalPriceOre === 0) {
       const { recordSubscriptionHoursUsed } = await import("@/lib/subscription");
       if (pricing.subscriptionHoursUsed > 0) {
         await recordSubscriptionHoursUsed(session.user.id, pricing.subscriptionHoursUsed);
@@ -106,7 +118,7 @@ export async function POST(request: Request) {
               name: `Værkstedbooking — ${hours} timer`,
               description: `${persons} person(er)${hasPotteryWheel ? " + drejeskive" : ""}`,
             },
-            unit_amount: pricing.totalPriceOre,
+            unit_amount: totalPriceOre,
           },
           quantity: 1,
         },
@@ -139,6 +151,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const hours = parseInt(searchParams.get("hours") ?? "1", 10);
   const persons = parseInt(searchParams.get("persons") ?? "1", 10);
+
+  if (!isValidBookingHours(hours)) {
+    return NextResponse.json({ error: "Ugyldigt antal timer" }, { status: 400 });
+  }
 
   if (searchParams.get("nextAvailable") === "true") {
     const session = await auth();

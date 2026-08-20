@@ -2,17 +2,22 @@
 
 import { useState } from "react";
 import { BookingWizard } from "@/components/booking/booking-wizard";
+import { PricingSettings } from "@/lib/pricing-settings";
 
 type BookPageClientProps = {
   userName: string;
   subscriptionHoursAvailable: number;
   hasUnlimitedSubscription: boolean;
+  pricingSettings: PricingSettings;
+  zeroPricing: boolean;
 };
 
 export function BookPageClient({
   userName,
   subscriptionHoursAvailable,
   hasUnlimitedSubscription,
+  pricingSettings,
+  zeroPricing,
 }: BookPageClientProps) {
   const [step, setStep] = useState(1);
   const isOverview = step === 5;
@@ -25,7 +30,7 @@ export function BookPageClient({
           <p className="mt-1 text-stone-500">Hej {userName}! Følg trinene for at booke.</p>
           {subscriptionHoursAvailable > 0 && !hasUnlimitedSubscription && (
             <p className="mt-2 text-sm text-brand bg-brand-light rounded-full inline-block px-4 py-1">
-              {subscriptionHoursAvailable} abonnementstimer tilbage denne uge
+              {subscriptionHoursAvailable} abonnementstimer tilbage denne måned
             </p>
           )}
           {hasUnlimitedSubscription && (
@@ -37,6 +42,8 @@ export function BookPageClient({
       )}
       <BookingWizard
         subscriptionHoursAvailable={subscriptionHoursAvailable}
+        pricingSettings={pricingSettings}
+        zeroPricing={zeroPricing}
         onStepChange={setStep}
       />
     </div>

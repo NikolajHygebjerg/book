@@ -2,15 +2,22 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { SubscriptionManager } from "@/components/subscription/subscription-manager";
-import { getActiveSubscription, getWeeklyHoursUsed, getAvailableSubscriptionHours } from "@/lib/subscription";
+import { getActiveSubscription, getMonthlyHoursUsed, getAvailableSubscriptionHours } from "@/lib/subscription";
+import { getPricingSettings } from "@/lib/pricing-settings";
+import { shouldUseZeroPricing } from "@/lib/zero-pricing";
 
 export default async function AbonnementPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const subscription = await getActiveSubscription(session.user.id);
-  const hoursUsed = await getWeeklyHoursUsed(session.user.id);
-  const hoursAvailable = await getAvailableSubscriptionHours(session.user.id);
+  const zeroPricing = shouldUseZeroPricing(session.user.email);
+
+  const [subscription, hoursUsed, hoursAvailable, pricing] = await Promise.all([
+    getActiveSubscription(session.user.id),
+    getMonthlyHoursUsed(session.user.id),
+    getAvailableSubscriptionHours(session.user.id),
+    getPricingSettings(),
+  ]);
 
   return (
     <div className="px-4 py-12">
@@ -26,6 +33,8 @@ export default async function AbonnementPage() {
           Vælg et abonnement der passer til hvor ofte du kommer i værkstedet.
         </p>
         <SubscriptionManager
+          pricing={pricing}
+          zeroPricing={zeroPricing}
           initialData={{
             subscription: subscription
               ? {

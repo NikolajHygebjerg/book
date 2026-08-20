@@ -53,7 +53,7 @@ model User {
   sessions      Session[]
   bookings      Booking[]
   subscriptions Subscription[]
-  weeklyUsage   WeeklyUsage[]
+  monthlyUsage  MonthlyUsage[]
   payments      Payment[]
 }
 
@@ -134,15 +134,15 @@ model Subscription {
   @@index([userId])
 }
 
-model WeeklyUsage {
-  id        String   @id @default(cuid())
-  userId    String
-  weekStart DateTime
-  hoursUsed Float    @default(0)
+model MonthlyUsage {
+  id         String   @id @default(cuid())
+  userId     String
+  monthStart DateTime
+  hoursUsed  Float    @default(0)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, weekStart])
+  @@unique([userId, monthStart])
 }
 
 model Payment {
@@ -158,4 +158,25 @@ model Payment {
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+}
+
+model PricingConfig {
+  id                     String   @id @default("default")
+  potteryWheelPerHourOre Int      @default(5000)
+  updatedAt              DateTime @updatedAt
+}
+
+model BookingHourPrice {
+  hours     Int      @id
+  priceOre  Int
+  updatedAt DateTime @updatedAt
+}
+
+model SubscriptionPlanConfig {
+  plan            SubscriptionPlan @id
+  name            String
+  description     String
+  hoursPerMonth   Int
+  monthlyPriceOre Int
+  updatedAt       DateTime         @updatedAt
 }

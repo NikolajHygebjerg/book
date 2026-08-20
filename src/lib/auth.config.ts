@@ -8,7 +8,7 @@ export const authConfig = {
   providers: [],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      const protectedRoutes = ["/book", "/min-side", "/booking"];
+      const protectedRoutes = ["/book", "/min-side", "/booking", "/admin"];
       const isProtected = protectedRoutes.some((route) =>
         nextUrl.pathname.startsWith(route)
       );

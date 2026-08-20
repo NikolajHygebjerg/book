@@ -5,8 +5,9 @@ import { format, addHours } from "date-fns";
 import { da } from "date-fns/locale";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { PRICING, WORKSHOP_CONFIG, formatDKK } from "@/lib/config";
+import { WORKSHOP_CONFIG, formatDKK, formatBookingHours, formatBookingHoursShort } from "@/lib/config";
 import { calculateBookingPrice } from "@/lib/pricing";
+import { PricingSettings } from "@/lib/pricing-settings";
 import {
   getNextHourSlot,
   getMinTimeForDate,
@@ -25,13 +26,17 @@ type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 const STEPS = ["Timer", "Personer", "Dato", "Tilvalg", "Oversigt"] as const;
 
-const basisPlan = PRICING.subscriptions.BASIS;
+const basisPlan = (pricing: PricingSettings) => pricing.subscriptions.BASIS;
 
 export function BookingWizard({
   subscriptionHoursAvailable = 0,
+  pricingSettings,
+  zeroPricing = false,
   onStepChange,
 }: {
   subscriptionHoursAvailable?: number;
+  pricingSettings: PricingSettings;
+  zeroPricing?: boolean;
   onStepChange?: (step: Step) => void;
 }) {
   const [step, setStep] = useState<Step>(1);
@@ -90,12 +95,17 @@ export function BookingWizard({
   const startTime = date && time ? new Date(`${date}T${time}:00`) : null;
   const endTime = startTime ? addHours(startTime, hours) : null;
 
-  const pricing = calculateBookingPrice({
-    hours,
-    persons,
-    hasPotteryWheel,
-    subscriptionHoursAvailable,
-  });
+  const pricing = calculateBookingPrice(
+    {
+      hours,
+      persons,
+      hasPotteryWheel,
+      subscriptionHoursAvailable,
+    },
+    pricingSettings
+  );
+
+  const totalPriceOre = zeroPricing ? 0 : pricing.totalPriceOre;
 
   const fetchOccupancy = useCallback(async () => {
     if (!startTime) return;
@@ -195,10 +205,10 @@ export function BookingWizard({
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-stone-900">Hvor mange timer vil du booke?</h2>
             <p className="text-stone-500 text-sm">
-              Du kan booke mellem {WORKSHOP_CONFIG.minHours} og {WORKSHOP_CONFIG.maxHours} timer i træk.
+              Vælg 1–6 timer, 12 timer eller et helt døgn.
             </p>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-              {Array.from({ length: 24 }, (_, i) => i + 1).map((h) => (
+            <div className="grid grid-cols-4 sm:grid-cols-4 gap-2">
+              {WORKSHOP_CONFIG.bookingHourOptions.map((h) => (
                 <button
                   key={h}
                   onClick={() => setHours(h)}
@@ -208,7 +218,7 @@ export function BookingWizard({
                       : "bg-stone-50 text-stone-700 hover:bg-stone-100"
                   }`}
                 >
-                  {h}t
+                  {formatBookingHoursShort(h)}
                 </button>
               ))}
             </div>
@@ -276,7 +286,7 @@ export function BookingWizard({
             {startTime && endTime && (
               <p className="text-sm text-stone-600 bg-stone-50 rounded-xl px-4 py-3">
                 {format(startTime, "EEEE d. MMMM yyyy 'kl.' HH:mm", { locale: da })} —{" "}
-                {format(endTime, "HH:mm", { locale: da })} ({hours} timer)
+                {format(endTime, "HH:mm", { locale: da })} ({formatBookingHours(hours)})
               </p>
             )}
           </div>
@@ -297,7 +307,7 @@ export function BookingWizard({
                 <div>
                   <p className="font-medium text-stone-900">Drejeskive</p>
                   <p className="text-sm text-stone-500">
-                    Reserver en drejeskive (+{formatDKK(PRICING.potteryWheelPerHourOre)}/time)
+                    Reserver en drejeskive (+{formatDKK(zeroPricing ? 0 : pricingSettings.potteryWheelPerHourOre)}/time)
                   </p>
                 </div>
                 <div
@@ -324,7 +334,7 @@ export function BookingWizard({
               </div>
               <div className="flex justify-between">
                 <span className="text-stone-500">Varighed</span>
-                <span className="font-medium text-stone-900">{hours} timer</span>
+                <span className="font-medium text-stone-900">{formatBookingHours(hours)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-stone-500">Personer</span>
@@ -349,7 +359,7 @@ export function BookingWizard({
 
             <div className="flex justify-between text-lg font-semibold text-stone-900 px-1">
               <span>Total</span>
-              <span>{formatDKK(pricing.totalPriceOre)}</span>
+              <span>{formatDKK(totalPriceOre)}</span>
             </div>
 
             {error && (
@@ -363,15 +373,18 @@ export function BookingWizard({
             >
               {loading
                 ? "Behandler..."
-                : pricing.totalPriceOre === 0
+                : totalPriceOre === 0
                   ? "Bekræft booking"
-                  : `Betal ${formatDKK(pricing.totalPriceOre)}`}
+                  : `Betal ${formatDKK(totalPriceOre)}`}
             </button>
 
             <div className="rounded-xl border border-brand-light bg-brand-light p-3 text-center">
               <p className="text-sm text-stone-700">
-                Køb abonnement fra {formatDKK(basisPlan.monthlyPriceOre)}/md for{" "}
-                {basisPlan.hoursPerWeek} timer om ugen — tryk her
+                Køb abonnement fra {formatDKK(zeroPricing ? 0 : basisPlan(pricingSettings).monthlyPriceOre)}/md for{" "}
+                {basisPlan(pricingSettings).hoursPerMonth === "unlimited"
+                  ? "ubegrænset"
+                  : `${basisPlan(pricingSettings).hoursPerMonth} timer om måneden`}{" "}
+                — tryk her
               </p>
               <Link
                 href="/abonnement"

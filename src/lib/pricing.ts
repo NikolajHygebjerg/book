@@ -1,4 +1,5 @@
-import { PRICING, SubscriptionPlanKey } from "./config";
+import { formatDKK, SubscriptionPlanKey } from "./config";
+import { PricingSettings } from "./pricing-settings";
 
 export type BookingPriceInput = {
   hours: number;
@@ -16,15 +17,34 @@ export type BookingPriceResult = {
   breakdown: string[];
 };
 
-export function calculateBookingPrice(input: BookingPriceInput): BookingPriceResult {
+function getBundlePriceOre(hours: number, settings: PricingSettings): number {
+  if (hours <= 0) return 0;
+
+  const bundle = settings.bookingHourPrices[hours];
+  if (bundle !== undefined) return bundle;
+
+  const hourly = settings.bookingHourPrices[1] ?? 0;
+  return hourly * hours;
+}
+
+export function calculateBookingPrice(
+  input: BookingPriceInput,
+  settings: PricingSettings
+): BookingPriceResult {
   const { hours, persons, hasPotteryWheel, subscriptionHoursAvailable = 0 } = input;
 
   const subscriptionHoursUsed = Math.min(hours, subscriptionHoursAvailable);
   const extraHours = hours - subscriptionHoursUsed;
 
-  const extraPriceOre = extraHours * PRICING.hourlyRateOre * persons;
+  const fullBundleOre = getBundlePriceOre(hours, settings) * persons;
+  const coveredBundleOre =
+    subscriptionHoursUsed > 0
+      ? getBundlePriceOre(subscriptionHoursUsed, settings) * persons
+      : 0;
+  const extraPriceOre = fullBundleOre - coveredBundleOre;
+
   const potteryWheelPriceOre = hasPotteryWheel
-    ? hours * PRICING.potteryWheelPerHourOre
+    ? hours * settings.potteryWheelPerHourOre
     : 0;
 
   const totalPriceOre = extraPriceOre + potteryWheelPriceOre;
@@ -36,12 +56,12 @@ export function calculateBookingPrice(input: BookingPriceInput): BookingPriceRes
   }
   if (extraHours > 0) {
     breakdown.push(
-      `${extraHours} timer × ${persons} person(er) × ${PRICING.hourlyRateOre / 100} kr = ${extraPriceOre / 100} kr`
+      `${formatBookingDurationLabel(hours, subscriptionHoursUsed, persons, settings)} = ${formatDKK(extraPriceOre)}`
     );
   }
   if (hasPotteryWheel) {
     breakdown.push(
-      `Drejeskive: ${hours} timer × ${PRICING.potteryWheelPerHourOre / 100} kr = ${potteryWheelPriceOre / 100} kr`
+      `Drejeskive: ${hours} timer × ${formatDKK(settings.potteryWheelPerHourOre)} = ${formatDKK(potteryWheelPriceOre)}`
     );
   }
 
@@ -55,6 +75,28 @@ export function calculateBookingPrice(input: BookingPriceInput): BookingPriceRes
   };
 }
 
-export function getSubscriptionWeeklyLimit(plan: SubscriptionPlanKey): number {
-  return PRICING.subscriptions[plan].hoursPerWeek;
+function formatBookingDurationLabel(
+  totalHours: number,
+  coveredHours: number,
+  persons: number,
+  settings: PricingSettings
+): string {
+  if (coveredHours > 0) {
+    return `${totalHours} timer (${coveredHours} via abonnement) × ${persons} person(er)`;
+  }
+
+  const bundle = settings.bookingHourPrices[totalHours];
+  if (bundle !== undefined) {
+    return `${totalHours} timer × ${persons} person(er) (${formatDKK(bundle)}/pers.)`;
+  }
+
+  return `${totalHours} timer × ${persons} person(er)`;
+}
+
+export function getSubscriptionMonthlyLimit(
+  plan: SubscriptionPlanKey,
+  settings: PricingSettings
+): number {
+  const hoursPerMonth = settings.subscriptions[plan].hoursPerMonth;
+  return hoursPerMonth === "unlimited" ? Infinity : hoursPerMonth;
 }

@@ -1,15 +1,12 @@
-import { startOfWeek, endOfWeek } from "date-fns";
+import { startOfMonth } from "date-fns";
 import { SubscriptionPlan } from "@/generated/prisma/client";
 import { db } from "./db";
-import { getSubscriptionWeeklyLimit } from "./pricing";
+import { getSubscriptionMonthlyLimit } from "./pricing";
+import { getPricingSettings } from "./pricing-settings";
 import { SubscriptionPlanKey } from "./config";
 
-export function getWeekStart(date: Date = new Date()): Date {
-  return startOfWeek(date, { weekStartsOn: 1 });
-}
-
-export function getWeekEnd(date: Date = new Date()): Date {
-  return endOfWeek(date, { weekStartsOn: 1 });
+export function getMonthStart(date: Date = new Date()): Date {
+  return startOfMonth(date);
 }
 
 export async function getActiveSubscription(userId: string) {
@@ -22,12 +19,12 @@ export async function getActiveSubscription(userId: string) {
   });
 }
 
-export async function getWeeklyHoursUsed(userId: string, date: Date = new Date()): Promise<number> {
-  const weekStart = getWeekStart(date);
+export async function getMonthlyHoursUsed(userId: string, date: Date = new Date()): Promise<number> {
+  const monthStart = getMonthStart(date);
 
-  const usage = await db.weeklyUsage.findUnique({
+  const usage = await db.monthlyUsage.findUnique({
     where: {
-      userId_weekStart: { userId, weekStart },
+      userId_monthStart: { userId, monthStart },
     },
   });
 
@@ -39,12 +36,13 @@ export async function getAvailableSubscriptionHours(userId: string): Promise<num
   if (!subscription) return 0;
 
   const plan = subscription.plan as SubscriptionPlanKey;
-  const weeklyLimit = getSubscriptionWeeklyLimit(plan);
+  const settings = await getPricingSettings();
+  const monthlyLimit = getSubscriptionMonthlyLimit(plan, settings);
 
-  if (weeklyLimit === Infinity) return Infinity;
+  if (monthlyLimit === Infinity) return Infinity;
 
-  const used = await getWeeklyHoursUsed(userId);
-  return Math.max(0, weeklyLimit - used);
+  const used = await getMonthlyHoursUsed(userId);
+  return Math.max(0, monthlyLimit - used);
 }
 
 export async function recordSubscriptionHoursUsed(
@@ -52,15 +50,15 @@ export async function recordSubscriptionHoursUsed(
   hours: number,
   date: Date = new Date()
 ): Promise<void> {
-  const weekStart = getWeekStart(date);
+  const monthStart = getMonthStart(date);
 
-  await db.weeklyUsage.upsert({
+  await db.monthlyUsage.upsert({
     where: {
-      userId_weekStart: { userId, weekStart },
+      userId_monthStart: { userId, monthStart },
     },
     create: {
       userId,
-      weekStart,
+      monthStart,
       hoursUsed: hours,
     },
     update: {

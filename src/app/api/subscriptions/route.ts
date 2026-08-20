@@ -3,12 +3,39 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
-import { planToStripePriceId } from "@/lib/subscription";
 import { SubscriptionPlan } from "@/generated/prisma/client";
+import { getPricingSettings } from "@/lib/pricing-settings";
+import { SubscriptionPlanKey } from "@/lib/config";
+import { shouldUseZeroPricing, zeroPriceOre } from "@/lib/zero-pricing";
 
 const subscribeSchema = z.object({
   plan: z.enum(["BASIS", "PLUS", "UNLIMITED"]),
 });
+
+async function activateSubscriptionForTest(
+  userId: string,
+  plan: SubscriptionPlan
+): Promise<void> {
+  const existing = await db.subscription.findFirst({
+    where: { userId, status: "ACTIVE" },
+  });
+
+  if (existing) {
+    await db.subscription.update({
+      where: { id: existing.id },
+      data: { plan },
+    });
+    return;
+  }
+
+  await db.subscription.create({
+    data: {
+      userId,
+      plan,
+      status: "ACTIVE",
+    },
+  });
+}
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -25,13 +52,12 @@ export async function POST(request: Request) {
     }
 
     const plan = parsed.data.plan as SubscriptionPlan;
-    const priceId = planToStripePriceId(plan);
+    const pricingSettings = await getPricingSettings();
+    const planKey = plan as SubscriptionPlanKey;
+    const planPricing = pricingSettings.subscriptions[planKey];
 
-    if (!priceId) {
-      return NextResponse.json(
-        { error: "Stripe pris ikke konfigureret for denne plan" },
-        { status: 500 }
-      );
+    if (!planPricing) {
+      return NextResponse.json({ error: "Ukendt abonnement" }, { status: 400 });
     }
 
     const existing = await db.subscription.findFirst({
@@ -41,6 +67,14 @@ export async function POST(request: Request) {
       },
     });
 
+    if (shouldUseZeroPricing(session.user.email)) {
+      await activateSubscriptionForTest(session.user.id, plan);
+      return NextResponse.json({
+        confirmed: true,
+        redirectUrl: `${process.env.NEXTAUTH_URL}/min-side/abonnement?success=true`,
+      });
+    }
+
     if (existing?.stripeSubscriptionId) {
       const stripeSession = await getStripe().billingPortal.sessions.create({
         customer: existing.stripeCustomerId!,
@@ -49,10 +83,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ portalUrl: stripeSession.url });
     }
 
+    const monthlyPriceOre = zeroPriceOre(planPricing.monthlyPriceOre, session.user.email);
+
     const stripeSession = await getStripe().checkout.sessions.create({
       mode: "subscription",
       customer_email: session.user.email ?? undefined,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [
+        {
+          price_data: {
+            currency: "dkk",
+            product_data: {
+              name: `Abonnement — ${planPricing.name}`,
+              description: planPricing.description,
+            },
+            unit_amount: monthlyPriceOre,
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        },
+      ],
       metadata: {
         userId: session.user.id,
         plan,
@@ -78,11 +127,11 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  const { getWeeklyHoursUsed, getAvailableSubscriptionHours } = await import(
+  const { getMonthlyHoursUsed, getAvailableSubscriptionHours } = await import(
     "@/lib/subscription"
   );
 
-  const hoursUsed = await getWeeklyHoursUsed(session.user.id);
+  const hoursUsed = await getMonthlyHoursUsed(session.user.id);
   const hoursAvailable = await getAvailableSubscriptionHours(session.user.id);
 
   return NextResponse.json({
