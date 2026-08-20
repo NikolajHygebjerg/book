@@ -107,7 +107,7 @@ export function BookingWizard({
     pricingSettings
   );
 
-  const totalPriceOre = zeroPricing ? 0 : pricing.totalPriceOre;
+  const totalPriceOre = pricing.totalPriceOre;
 
   const fetchOccupancy = useCallback(async () => {
     if (!startTime) return;
@@ -309,7 +309,7 @@ export function BookingWizard({
                 <div>
                   <p className="font-medium text-stone-900">Drejeskive</p>
                   <p className="text-sm text-stone-500">
-                    Reserver en drejeskive (+{formatDKK(zeroPricing ? 0 : pricingSettings.potteryWheelPerHourOre)}/time)
+                    Reserver en drejeskive (+{formatDKK(pricingSettings.potteryWheelPerHourOre)}/time)
                   </p>
                 </div>
                 <div
@@ -364,6 +364,12 @@ export function BookingWizard({
               <span>{formatDKK(totalPriceOre)}</span>
             </div>
 
+            {zeroPricing && totalPriceOre > 0 && (
+              <p className="text-sm text-brand bg-brand-light rounded-xl px-4 py-2">
+                Testtilstand: du betaler 0 kr. som admin — vist pris er den konfigurerede.
+              </p>
+            )}
+
             {error && (
               <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
             )}
@@ -375,14 +381,14 @@ export function BookingWizard({
             >
               {loading
                 ? "Behandler..."
-                : totalPriceOre === 0
+                : zeroPricing || totalPriceOre === 0
                   ? "Bekræft booking"
                   : `Betal ${formatDKK(totalPriceOre)}`}
             </button>
 
             <div className="rounded-xl border border-brand-light bg-brand-light p-3 text-center">
               <p className="text-sm text-stone-700">
-                Køb abonnement fra {formatDKK(zeroPricing ? 0 : basisPlan(pricingSettings).monthlyPriceOre)}/md for{" "}
+                Køb abonnement fra {formatDKK(basisPlan(pricingSettings).monthlyPriceOre)}/md for{" "}
                 {basisPlan(pricingSettings).hoursPerMonth === "unlimited"
                   ? "ubegrænset"
                   : `${basisPlan(pricingSettings).hoursPerMonth} timer om måneden`}{" "}

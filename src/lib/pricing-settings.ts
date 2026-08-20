@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { SubscriptionPlan } from "@/generated/prisma/client";
 import { db } from "./db";
 import { PRICING, SubscriptionPlanKey, WORKSHOP_CONFIG } from "./config";
@@ -95,7 +96,11 @@ export async function ensurePricingDefaults(): Promise<void> {
   }
 }
 
+const PLAN_KEYS: SubscriptionPlanKey[] = ["BASIS", "PLUS", "UNLIMITED"];
+
 export async function getPricingSettings(): Promise<PricingSettings> {
+  noStore();
+
   try {
     const [config, hourPrices, subscriptionPlans] = await Promise.all([
       db.pricingConfig.findUnique({ where: { id: "default" } }),
@@ -113,6 +118,14 @@ export async function getPricingSettings(): Promise<PricingSettings> {
       bookingHourPrices[row.hours] = row.priceOre;
     }
 
+    const missingHours = WORKSHOP_CONFIG.bookingHourOptions.filter(
+      (hours) => bookingHourPrices[hours] === undefined
+    );
+    if (missingHours.length > 0) {
+      await ensurePricingDefaults();
+      return getPricingSettings();
+    }
+
     const subscriptions = {} as Record<SubscriptionPlanKey, SubscriptionPlanSettings>;
     for (const row of subscriptionPlans) {
       const key = row.plan as SubscriptionPlanKey;
@@ -124,12 +137,19 @@ export async function getPricingSettings(): Promise<PricingSettings> {
       };
     }
 
+    const missingPlans = PLAN_KEYS.filter((key) => !subscriptions[key]);
+    if (missingPlans.length > 0) {
+      await ensurePricingDefaults();
+      return getPricingSettings();
+    }
+
     return {
       bookingHourPrices,
       potteryWheelPerHourOre: config.potteryWheelPerHourOre,
       subscriptions,
     };
-  } catch {
+  } catch (error) {
+    console.error("getPricingSettings failed:", error);
     return defaultSettings();
   }
 }

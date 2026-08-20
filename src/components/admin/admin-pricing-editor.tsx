@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   WORKSHOP_CONFIG,
   formatBookingHours,
@@ -47,6 +48,7 @@ function krInputToOre(value: string): number {
 const PLAN_KEYS: SubscriptionPlanKey[] = ["BASIS", "PLUS", "UNLIMITED"];
 
 export function AdminPricingEditor({ initialPricing }: { initialPricing: PricingSettings }) {
+  const router = useRouter();
   const [form, setForm] = useState<FormState>(() => toFormState(initialPricing));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -60,7 +62,16 @@ export function AdminPricingEditor({ initialPricing }: { initialPricing: Pricing
     const res = await fetch("/api/admin/pricing", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        potteryWheelPerHourOre: form.potteryWheelPerHourOre,
+        bookingHourPrices: Object.fromEntries(
+          WORKSHOP_CONFIG.bookingHourOptions.map((hours) => [
+            String(hours),
+            form.bookingHourPrices[hours] ?? 0,
+          ])
+        ),
+        subscriptions: form.subscriptions,
+      }),
     });
 
     const data = await res.json();
@@ -73,6 +84,7 @@ export function AdminPricingEditor({ initialPricing }: { initialPricing: Pricing
 
     setForm(toFormState(data));
     setMessage("Priser gemt");
+    router.refresh();
     setSaving(false);
   };
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
@@ -64,6 +65,11 @@ export async function PATCH(request: Request) {
       bookingHourPrices,
       subscriptions: parsed.data.subscriptions,
     });
+
+    revalidatePath("/book");
+    revalidatePath("/abonnement");
+    revalidatePath("/min-side/abonnement");
+    revalidatePath("/admin");
 
     return NextResponse.json(pricing);
   } catch (error) {

@@ -106,7 +106,7 @@ export function SubscriptionManager({
               >
                 <h3 className="font-semibold text-stone-900 text-lg">{plan.name}</h3>
                 <p className="text-3xl font-bold text-stone-900 mt-2">
-                  {formatDKK(zeroPricing ? 0 : plan.monthlyPriceOre)}
+                  {formatDKK(plan.monthlyPriceOre)}
                   <span className="text-sm font-normal text-stone-500">/md</span>
                 </p>
                 <p className="text-sm text-stone-500 mt-2 flex-1">{plan.description}</p>
@@ -138,6 +138,12 @@ export function SubscriptionManager({
           })}
         </div>
       </section>
+
+      {zeroPricing && (
+        <p className="text-sm text-brand bg-brand-light rounded-xl px-4 py-3">
+          Testtilstand: du betaler 0 kr. som admin — viste priser er de konfigurerede.
+        </p>
+      )}
 
       {error && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
