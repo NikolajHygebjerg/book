@@ -21,11 +21,9 @@ const BENEFITS = [
 export function SubscriptionLanding({
   isLoggedIn,
   pricing,
-  zeroPricing = false,
 }: {
   isLoggedIn: boolean;
   pricing: PricingSettings;
-  zeroPricing?: boolean;
 }) {
   const ctaHref = isLoggedIn ? "/min-side/abonnement" : "/";
   const ctaLabel = isLoggedIn ? "Vælg abonnement" : "Opret konto og kom i gang";

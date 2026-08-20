@@ -9,7 +9,6 @@ type BookPageClientProps = {
   subscriptionHoursAvailable: number;
   hasUnlimitedSubscription: boolean;
   pricingSettings: PricingSettings;
-  zeroPricing: boolean;
 };
 
 export function BookPageClient({
@@ -17,7 +16,6 @@ export function BookPageClient({
   subscriptionHoursAvailable,
   hasUnlimitedSubscription,
   pricingSettings,
-  zeroPricing,
 }: BookPageClientProps) {
   const [step, setStep] = useState(1);
   const isOverview = step === 5;
@@ -43,7 +41,6 @@ export function BookPageClient({
       <BookingWizard
         subscriptionHoursAvailable={subscriptionHoursAvailable}
         pricingSettings={pricingSettings}
-        zeroPricing={zeroPricing}
         onStepChange={setStep}
       />
     </div>

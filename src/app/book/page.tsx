@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { BookPageClient } from "@/components/booking/book-page-client";
 import { getAvailableSubscriptionHours } from "@/lib/subscription";
 import { getPricingSettings } from "@/lib/pricing-settings";
-import { shouldUseZeroPricing } from "@/lib/zero-pricing";
 
 export default async function BookPage() {
   const session = await auth();
@@ -21,7 +20,6 @@ export default async function BookPage() {
       subscriptionHoursAvailable={available}
       hasUnlimitedSubscription={subscriptionHours === Infinity}
       pricingSettings={pricingSettings}
-      zeroPricing={shouldUseZeroPricing(session.user.email)}
     />
   );
 }

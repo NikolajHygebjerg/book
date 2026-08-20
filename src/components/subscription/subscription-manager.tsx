@@ -21,11 +21,9 @@ const PLAN_ORDER: SubscriptionPlanKey[] = ["BASIS", "PLUS", "UNLIMITED"];
 export function SubscriptionManager({
   initialData,
   pricing,
-  zeroPricing = false,
 }: {
   initialData: SubscriptionData;
   pricing: PricingSettings;
-  zeroPricing?: boolean;
 }) {
   const [data] = useState(initialData);
   const [loading, setLoading] = useState<string | null>(null);
@@ -46,11 +44,6 @@ export function SubscriptionManager({
     if (!res.ok) {
       setError(result.error ?? "Noget gik galt");
       setLoading(null);
-      return;
-    }
-
-    if (result.confirmed && result.redirectUrl) {
-      window.location.href = result.redirectUrl;
       return;
     }
 
@@ -138,12 +131,6 @@ export function SubscriptionManager({
           })}
         </div>
       </section>
-
-      {zeroPricing && (
-        <p className="text-sm text-brand bg-brand-light rounded-xl px-4 py-3">
-          Testtilstand: du betaler 0 kr. som admin — viste priser er de konfigurerede.
-        </p>
-      )}
 
       {error && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>

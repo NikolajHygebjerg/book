@@ -4,13 +4,10 @@ import { auth } from "@/lib/auth";
 import { SubscriptionManager } from "@/components/subscription/subscription-manager";
 import { getActiveSubscription, getMonthlyHoursUsed, getAvailableSubscriptionHours } from "@/lib/subscription";
 import { getPricingSettings } from "@/lib/pricing-settings";
-import { shouldUseZeroPricing } from "@/lib/zero-pricing";
 
 export default async function AbonnementPage() {
   const session = await auth();
   if (!session) redirect("/login");
-
-  const zeroPricing = shouldUseZeroPricing(session.user.email);
 
   const [subscription, hoursUsed, hoursAvailable, pricing] = await Promise.all([
     getActiveSubscription(session.user.id),
@@ -34,7 +31,6 @@ export default async function AbonnementPage() {
         </p>
         <SubscriptionManager
           pricing={pricing}
-          zeroPricing={zeroPricing}
           initialData={{
             subscription: subscription
               ? {

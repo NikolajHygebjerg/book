@@ -30,12 +30,10 @@ const basisPlan = (pricing: PricingSettings) => pricing.subscriptions.BASIS;
 export function BookingWizard({
   subscriptionHoursAvailable = 0,
   pricingSettings,
-  zeroPricing = false,
   onStepChange,
 }: {
   subscriptionHoursAvailable?: number;
   pricingSettings: PricingSettings;
-  zeroPricing?: boolean;
   onStepChange?: (step: Step) => void;
 }) {
   const [step, setStep] = useState<Step>(1);
@@ -316,12 +314,6 @@ export function BookingWizard({
               <span>{formatDKK(totalPriceOre)}</span>
             </div>
 
-            {zeroPricing && totalPriceOre > 0 && (
-              <p className="text-sm text-brand bg-brand-light rounded-xl px-4 py-2">
-                Testtilstand: du betaler 0 kr. som admin — vist pris er den konfigurerede.
-              </p>
-            )}
-
             {error && (
               <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
             )}
@@ -333,7 +325,7 @@ export function BookingWizard({
             >
               {loading
                 ? "Behandler..."
-                : zeroPricing || totalPriceOre === 0
+                : totalPriceOre === 0
                   ? "Bekræft booking"
                   : `Betal ${formatDKK(totalPriceOre)}`}
             </button>

@@ -7,7 +7,6 @@ import { canAccommodate } from "@/lib/capacity";
 import { calculateBookingPrice } from "@/lib/pricing";
 import { getAvailableSubscriptionHours } from "@/lib/subscription";
 import { getPricingSettings } from "@/lib/pricing-settings";
-import { shouldUseZeroPricing, zeroPriceOre } from "@/lib/zero-pricing";
 import { getStripe } from "@/lib/stripe";
 import { findNextAvailableSlot } from "@/lib/find-next-slot";
 import { toDateInputValue, toTimeInputValue, isBookingStartInPast } from "@/lib/booking-slots";
@@ -85,7 +84,7 @@ export async function POST(request: Request) {
       pricingSettings
     );
 
-    const totalPriceOre = zeroPriceOre(pricing.totalPriceOre, session.user.email);
+    const totalPriceOre = pricing.totalPriceOre;
 
     const booking = await db.booking.create({
       data: {
