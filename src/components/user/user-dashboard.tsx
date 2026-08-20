@@ -23,7 +23,6 @@ type UserData = {
 };
 
 export function UserDashboard({ initialUser }: { initialUser: UserData }) {
-  const router = useRouter();
   const [user, setUser] = useState(initialUser);
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone ?? "");

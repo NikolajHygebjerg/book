@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^7.9.1",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "bcryptjs": "^3.0.3",
@@ -27,6 +29,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "stripe": "^22.5.0",
+    "ws": "^8.21.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -36,6 +39,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ws": "^8.18.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",
