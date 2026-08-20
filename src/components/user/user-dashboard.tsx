@@ -70,7 +70,7 @@ export function UserDashboard({ initialUser }: { initialUser: UserData }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-stone-200 px-4 py-3 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-xl border border-stone-200 px-4 py-3 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
             />
           </div>
           <div>
@@ -88,13 +88,13 @@ export function UserDashboard({ initialUser }: { initialUser: UserData }) {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-xl border border-stone-200 px-4 py-3 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-xl border border-stone-200 px-4 py-3 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
             />
           </div>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-xl bg-amber-700 px-6 py-2 font-medium text-white hover:bg-amber-800 disabled:opacity-50 transition-colors"
+            className="rounded-xl bg-brand px-6 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
           >
             {saving ? "Gemmer..." : "Gem ændringer"}
           </button>

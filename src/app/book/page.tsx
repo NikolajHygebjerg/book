@@ -19,12 +19,12 @@ export default async function BookPage() {
           Hej {session.user.name}! Følg trinene for at booke.
         </p>
         {subscriptionHours > 0 && subscriptionHours !== Infinity && (
-          <p className="mt-2 text-sm text-amber-700 bg-amber-50 rounded-full inline-block px-4 py-1">
+          <p className="mt-2 text-sm text-brand bg-brand-light rounded-full inline-block px-4 py-1">
             {subscriptionHours} abonnementstimer tilbage denne uge
           </p>
         )}
         {subscriptionHours === Infinity && (
-          <p className="mt-2 text-sm text-amber-700 bg-amber-50 rounded-full inline-block px-4 py-1">
+          <p className="mt-2 text-sm text-brand bg-brand-light rounded-full inline-block px-4 py-1">
             Ubegrænset abonnement — alle timer er gratis
           </p>
         )}

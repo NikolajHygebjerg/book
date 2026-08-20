@@ -21,7 +21,7 @@ export default async function ConfirmationPage({
       <div className="mt-8 flex flex-col gap-3">
         <Link
           href="/min-side"
-          className="rounded-xl bg-amber-700 px-6 py-3 font-medium text-white hover:bg-amber-800 transition-colors"
+          className="rounded-xl bg-brand px-6 py-3 font-medium text-white hover:bg-brand-dark transition-colors"
         >
           Se mine bookinger
         </Link>

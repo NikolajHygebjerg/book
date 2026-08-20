@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   title: "Begejstring — Åbent værksted",
   description: "Book tid i keramikværkstedet. 10 pladser, døgnet rundt.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -21,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#b45309",
+  themeColor: "#f7a72e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -34,13 +38,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AuthProvider>
           <Header />
           <main className="flex-1">{children}</main>
-          <footer className="border-t border-stone-200 bg-white py-8 text-center text-sm text-stone-500">
-            <p>Værkstedet for kreativ begejstring · Ravnen 5, 8410 Rønde</p>
-            <p className="mt-1">
-              <a href="mailto:laila@begejstring.dk" className="hover:text-stone-700">
-                laila@begejstring.dk
-              </a>
-            </p>
+          <footer className="border-t border-stone-200 bg-white py-6 text-center text-sm text-stone-500">
+            <p>Ravnen 5, 8410 Rønde</p>
           </footer>
         </AuthProvider>
       </body>

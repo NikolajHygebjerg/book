@@ -44,7 +44,7 @@ export default async function MinSidePage() {
           </div>
           <Link
             href="/min-side/abonnement"
-            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 hover:bg-amber-100 transition-colors"
+            className="rounded-xl border border-brand-light bg-brand-light px-4 py-2 text-sm text-brand-dark hover:bg-brand-light transition-colors"
           >
             Abonnement
           </Link>

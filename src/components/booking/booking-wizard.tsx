@@ -131,7 +131,7 @@ export function BookingWizard({
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors ${
                 step >= num
-                  ? "border-amber-700 bg-amber-700 text-white"
+                  ? "border-brand bg-brand text-white"
                   : "border-stone-200 text-stone-400"
               }`}
             >
@@ -156,7 +156,7 @@ export function BookingWizard({
                   onClick={() => setHours(h)}
                   className={`rounded-xl py-3 text-sm font-medium transition-colors ${
                     hours === h
-                      ? "bg-amber-700 text-white"
+                      ? "bg-brand text-white"
                       : "bg-stone-50 text-stone-700 hover:bg-stone-100"
                   }`}
                 >
@@ -180,7 +180,7 @@ export function BookingWizard({
                   onClick={() => setPersons(p)}
                   className={`flex h-14 w-14 items-center justify-center rounded-xl text-lg font-medium transition-colors ${
                     persons === p
-                      ? "bg-amber-700 text-white"
+                      ? "bg-brand text-white"
                       : "bg-stone-50 text-stone-700 hover:bg-stone-100"
                   }`}
                 >
@@ -202,7 +202,7 @@ export function BookingWizard({
                   value={date}
                   min={format(new Date(), "yyyy-MM-dd")}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
                 />
               </div>
               <div>
@@ -211,7 +211,7 @@ export function BookingWizard({
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
                 />
               </div>
             </div>
@@ -231,7 +231,7 @@ export function BookingWizard({
               onClick={() => setHasPotteryWheel(!hasPotteryWheel)}
               className={`w-full rounded-xl border-2 p-4 text-left transition-colors ${
                 hasPotteryWheel
-                  ? "border-amber-700 bg-amber-50"
+                  ? "border-brand bg-brand-light"
                   : "border-stone-200 hover:border-stone-300"
               }`}
             >
@@ -244,7 +244,7 @@ export function BookingWizard({
                 </div>
                 <div
                   className={`h-6 w-6 rounded-full border-2 flex items-center justify-center ${
-                    hasPotteryWheel ? "border-amber-700 bg-amber-700" : "border-stone-300"
+                    hasPotteryWheel ? "border-brand bg-brand" : "border-stone-300"
                   }`}
                 >
                   {hasPotteryWheel && <Check className="h-4 w-4 text-white" />}
@@ -294,7 +294,7 @@ export function BookingWizard({
                         slot.isFull
                           ? "bg-red-50 text-red-700"
                           : slot.occupied + persons > 7
-                            ? "bg-amber-50 text-amber-800"
+                            ? "bg-brand-light text-brand-dark"
                             : "bg-green-50 text-green-800"
                       }`}
                     >
@@ -346,7 +346,7 @@ export function BookingWizard({
             <button
               onClick={handleNext}
               disabled={step === 3 && (!date || !time)}
-              className="flex items-center gap-1 rounded-xl bg-amber-700 px-6 py-2 font-medium text-white hover:bg-amber-800 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 rounded-xl bg-brand px-6 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
             >
               Næste
               <ChevronRight className="h-4 w-4" />
@@ -355,7 +355,7 @@ export function BookingWizard({
             <button
               onClick={handleSubmit}
               disabled={loading || !canBook}
-              className="flex items-center gap-1 rounded-xl bg-amber-700 px-6 py-2 font-medium text-white hover:bg-amber-800 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 rounded-xl bg-brand px-6 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
             >
               {loading
                 ? "Behandler..."
