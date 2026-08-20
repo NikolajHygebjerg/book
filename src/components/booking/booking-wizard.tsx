@@ -11,6 +11,8 @@ import { PricingSettings } from "@/lib/pricing-settings";
 import {
   getNextHourSlot,
   getMinTimeForDate,
+  getTodayDateInputValue,
+  parseBookingDateTime,
   toDateInputValue,
   toTimeInputValue,
 } from "@/lib/booking-slots";
@@ -92,7 +94,7 @@ export function BookingWizard({
     }
   }, [step, loadNextAvailableSlot]);
 
-  const startTime = date && time ? new Date(`${date}T${time}:00`) : null;
+  const startTime = date && time ? parseBookingDateTime(date, time) : null;
   const endTime = startTime ? addHours(startTime, hours) : null;
 
   const pricing = calculateBookingPrice(
@@ -265,7 +267,7 @@ export function BookingWizard({
                 <input
                   type="date"
                   value={date}
-                  min={format(new Date(), "yyyy-MM-dd")}
+                  min={getTodayDateInputValue()}
                   onChange={(e) => setDate(e.target.value)}
                   disabled={loadingSuggestion}
                   className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light disabled:opacity-50"

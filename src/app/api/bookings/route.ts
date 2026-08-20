@@ -10,7 +10,7 @@ import { getPricingSettings } from "@/lib/pricing-settings";
 import { shouldUseZeroPricing, zeroPriceOre } from "@/lib/zero-pricing";
 import { getStripe } from "@/lib/stripe";
 import { findNextAvailableSlot } from "@/lib/find-next-slot";
-import { toDateInputValue, toTimeInputValue } from "@/lib/booking-slots";
+import { toDateInputValue, toTimeInputValue, isBookingStartInPast } from "@/lib/booking-slots";
 import { WORKSHOP_CONFIG, isValidBookingHours } from "@/lib/config";
 
 const bookingSchema = z.object({
@@ -42,6 +42,14 @@ export async function POST(request: Request) {
 
     const { hours, persons, startTime, hasPotteryWheel } = parsed.data;
     const start = new Date(startTime);
+
+    if (isBookingStartInPast(start)) {
+      return NextResponse.json(
+        { error: "Starttidspunktet ligger i fortiden — vælg et senere tidspunkt" },
+        { status: 400 }
+      );
+    }
+
     const end = addHours(start, hours);
 
     const existingBookings = await db.booking.findMany({
