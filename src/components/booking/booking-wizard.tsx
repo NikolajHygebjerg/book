@@ -9,12 +9,9 @@ import { WORKSHOP_CONFIG, formatDKK, formatBookingHours, formatBookingHoursShort
 import { calculateBookingPrice } from "@/lib/pricing";
 import { PricingSettings } from "@/lib/pricing-settings";
 import {
-  getNextHourSlot,
   getMinTimeForDate,
   getTodayDateInputValue,
   parseBookingDateTime,
-  toDateInputValue,
-  toTimeInputValue,
 } from "@/lib/booking-slots";
 
 type OccupancySlot = {
@@ -49,50 +46,12 @@ export function BookingWizard({
   const [hasPotteryWheel, setHasPotteryWheel] = useState(false);
   const [occupancy, setOccupancy] = useState<OccupancySlot[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
   const [error, setError] = useState("");
   const [canBook, setCanBook] = useState(true);
-
-  const loadNextAvailableSlot = useCallback(async () => {
-    setLoadingSuggestion(true);
-    setError("");
-
-    try {
-      const params = new URLSearchParams({
-        nextAvailable: "true",
-        hours: String(hours),
-        persons: String(persons),
-      });
-      const res = await fetch(`/api/bookings?${params}`);
-      const data = await res.json();
-
-      if (res.ok) {
-        setDate(data.date);
-        setTime(data.time);
-        return;
-      }
-
-      const fallback = getNextHourSlot();
-      setDate(toDateInputValue(fallback));
-      setTime(toTimeInputValue(fallback));
-    } catch {
-      const fallback = getNextHourSlot();
-      setDate(toDateInputValue(fallback));
-      setTime(toTimeInputValue(fallback));
-    } finally {
-      setLoadingSuggestion(false);
-    }
-  }, [hours, persons]);
 
   useEffect(() => {
     onStepChange?.(step);
   }, [step, onStepChange]);
-
-  useEffect(() => {
-    if (step === 3) {
-      loadNextAvailableSlot();
-    }
-  }, [step, loadNextAvailableSlot]);
 
   const startTime = date && time ? parseBookingDateTime(date, time) : null;
   const endTime = startTime ? addHours(startTime, hours) : null;
@@ -253,14 +212,7 @@ export function BookingWizard({
 
         {step === 3 && (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-stone-900">Vælg dato og starttid</h2>
-            {loadingSuggestion ? (
-              <p className="text-sm text-stone-500">Finder næste ledige tid...</p>
-            ) : (
-              <p className="text-sm text-stone-500">
-                Vi foreslår næste ledige tid — du kan ændre den hvis du vil.
-              </p>
-            )}
+            <h2 className="text-xl font-semibold text-stone-900">Vælg dato og tid</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">Dato</label>
@@ -269,8 +221,7 @@ export function BookingWizard({
                   value={date}
                   min={getTodayDateInputValue()}
                   onChange={(e) => setDate(e.target.value)}
-                  disabled={loadingSuggestion}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light disabled:opacity-50"
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
                 />
               </div>
               <div>
@@ -280,8 +231,7 @@ export function BookingWizard({
                   value={time}
                   min={date ? getMinTimeForDate(date) : undefined}
                   onChange={(e) => setTime(e.target.value)}
-                  disabled={loadingSuggestion}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light disabled:opacity-50"
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
                 />
               </div>
             </div>
@@ -424,7 +374,7 @@ export function BookingWizard({
 
             <button
               onClick={handleNext}
-              disabled={step === 3 && (!date || !time || loadingSuggestion)}
+              disabled={step === 3 && (!date || !time)}
               className="flex items-center gap-1 rounded-xl bg-brand px-6 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
             >
               Næste
