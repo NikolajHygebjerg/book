@@ -25,7 +25,14 @@ export default async function MinSidePage() {
           endTime: true,
           hours: true,
           persons: true,
-          potteryWheels: true,
+          potteryWheelReservations: {
+            select: {
+              wheelNumber: true,
+              startTime: true,
+              endTime: true,
+            },
+            orderBy: { wheelNumber: "asc" },
+          },
           totalPriceOre: true,
         },
       },
@@ -56,6 +63,11 @@ export default async function MinSidePage() {
               ...b,
               startTime: b.startTime.toISOString(),
               endTime: b.endTime.toISOString(),
+              potteryWheelReservations: b.potteryWheelReservations.map((r) => ({
+                wheelNumber: r.wheelNumber,
+                startTime: r.startTime.toISOString(),
+                endTime: r.endTime.toISOString(),
+              })),
             })),
           }}
         />

@@ -12,6 +12,15 @@ import { findNextAvailableSlot } from "@/lib/find-next-slot";
 import { toDateInputValue, toTimeInputValue, isBookingStartInPast } from "@/lib/booking-slots";
 import { WORKSHOP_CONFIG, isValidBookingHours } from "@/lib/config";
 
+import { findPotteryWheelConflicts } from "@/lib/pottery-wheels-db";
+import { validatePotteryWheelReservations } from "@/lib/pottery-wheels";
+
+const potteryWheelReservationSchema = z.object({
+  wheelNumber: z.number().int().min(1).max(WORKSHOP_CONFIG.totalPotteryWheels),
+  startTime: z.string().datetime(),
+  endTime: z.string().datetime(),
+});
+
 const bookingSchema = z.object({
   hours: z
     .number()
@@ -19,7 +28,7 @@ const bookingSchema = z.object({
     .refine(isValidBookingHours, { message: "Ugyldigt antal timer" }),
   persons: z.number().int().min(1).max(10),
   startTime: z.string().datetime(),
-  potteryWheels: z.number().int().min(0).max(WORKSHOP_CONFIG.maxPotteryWheels),
+  potteryWheelReservations: z.array(potteryWheelReservationSchema).default([]),
 });
 
 export async function POST(request: Request) {
@@ -39,7 +48,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { hours, persons, startTime, potteryWheels } = parsed.data;
+    const { hours, persons, startTime, potteryWheelReservations } = parsed.data;
     const start = new Date(startTime);
 
     if (isBookingStartInPast(start)) {
@@ -50,6 +59,21 @@ export async function POST(request: Request) {
     }
 
     const end = addHours(start, hours);
+
+    const wheelValidationError = validatePotteryWheelReservations(
+      potteryWheelReservations,
+      start,
+      end,
+      persons
+    );
+    if (wheelValidationError) {
+      return NextResponse.json({ error: wheelValidationError }, { status: 400 });
+    }
+
+    const wheelConflictError = await findPotteryWheelConflicts(potteryWheelReservations);
+    if (wheelConflictError) {
+      return NextResponse.json({ error: wheelConflictError }, { status: 409 });
+    }
 
     const existingBookings = await db.booking.findMany({
       where: {
@@ -78,7 +102,7 @@ export async function POST(request: Request) {
       {
         hours,
         persons,
-        potteryWheels,
+        potteryWheelReservations,
         subscriptionHoursAvailable: availableHours,
       },
       pricingSettings
@@ -93,11 +117,17 @@ export async function POST(request: Request) {
         endTime: end,
         hours,
         persons,
-        potteryWheels,
         subscriptionHoursUsed: pricing.subscriptionHoursUsed,
         extraHoursPaid: pricing.extraHours,
         totalPriceOre,
         status: totalPriceOre === 0 ? "CONFIRMED" : "PENDING",
+        potteryWheelReservations: {
+          create: potteryWheelReservations.map((reservation) => ({
+            wheelNumber: reservation.wheelNumber,
+            startTime: new Date(reservation.startTime),
+            endTime: new Date(reservation.endTime),
+          })),
+        },
       },
     });
 
@@ -114,6 +144,11 @@ export async function POST(request: Request) {
       });
     }
 
+    const wheelDescription =
+      potteryWheelReservations.length > 0
+        ? ` · ${potteryWheelReservations.length} drejeskive(r) reserveret`
+        : "";
+
     const stripeSession = await getStripe().checkout.sessions.create({
       mode: "payment",
       customer_email: session.user.email ?? undefined,
@@ -123,7 +158,7 @@ export async function POST(request: Request) {
             currency: "dkk",
             product_data: {
               name: `Værkstedbooking — ${hours} timer`,
-              description: `${persons} person(er)${potteryWheels > 0 ? ` · ${potteryWheels} drejeskive(r)` : ""}`,
+              description: `${persons} person(er)${wheelDescription}`,
             },
             unit_amount: totalPriceOre,
           },

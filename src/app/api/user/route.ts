@@ -32,7 +32,14 @@ export async function GET() {
           endTime: true,
           hours: true,
           persons: true,
-          potteryWheels: true,
+          potteryWheelReservations: {
+            select: {
+              wheelNumber: true,
+              startTime: true,
+              endTime: true,
+            },
+            orderBy: { wheelNumber: "asc" },
+          },
           totalPriceOre: true,
         },
       },

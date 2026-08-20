@@ -8,6 +8,12 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { WORKSHOP_CONFIG, formatDKK, formatBookingHours, formatBookingHoursShort } from "@/lib/config";
 import { calculateBookingPrice } from "@/lib/pricing";
 import { PricingSettings } from "@/lib/pricing-settings";
+import { PotteryWheelStep } from "@/components/booking/pottery-wheel-step";
+import {
+  draftToInput,
+  PotteryWheelReservationDraft,
+  validatePotteryWheelDrafts,
+} from "@/lib/pottery-wheels";
 import {
   getMinTimeForDate,
   getTodayDateInputValue,
@@ -41,7 +47,10 @@ export function BookingWizard({
   const [persons, setPersons] = useState(1);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [potteryWheels, setPotteryWheels] = useState(0);
+  const [potteryWheelReservations, setPotteryWheelReservations] = useState<
+    PotteryWheelReservationDraft[]
+  >([]);
+  const [potteryWheelError, setPotteryWheelError] = useState("");
   const [occupancy, setOccupancy] = useState<OccupancySlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,11 +63,20 @@ export function BookingWizard({
   const startTime = date && time ? parseBookingDateTime(date, time) : null;
   const endTime = startTime ? addHours(startTime, hours) : null;
 
+  useEffect(() => {
+    setPotteryWheelReservations((prev) => prev.slice(0, persons));
+  }, [persons]);
+
+  const potteryWheelInputs =
+    startTime && date
+      ? potteryWheelReservations.map((r) => draftToInput(r, date))
+      : [];
+
   const pricing = calculateBookingPrice(
     {
       hours,
       persons,
-      potteryWheels,
+      potteryWheelReservations: potteryWheelInputs,
       subscriptionHoursAvailable,
     },
     pricingSettings
@@ -94,6 +112,20 @@ export function BookingWizard({
     if (step === 3) {
       await fetchOccupancy();
     }
+    if (step === 4 && startTime && endTime) {
+      const validationError = validatePotteryWheelDrafts(
+        potteryWheelReservations,
+        date,
+        startTime,
+        endTime,
+        persons
+      );
+      if (validationError) {
+        setPotteryWheelError(validationError);
+        return;
+      }
+      setPotteryWheelError("");
+    }
     if (step < 6) setStep((s) => (s + 1) as Step);
   };
 
@@ -114,7 +146,7 @@ export function BookingWizard({
           hours,
           persons,
           startTime: startTime.toISOString(),
-          potteryWheels,
+          potteryWheelReservations: potteryWheelInputs,
         }),
       });
 
@@ -242,34 +274,23 @@ export function BookingWizard({
           </div>
         )}
 
-        {step === 4 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-stone-900">Tilvalg</h2>
-            <div>
-              <p className="font-medium text-stone-900">Drejeskive</p>
-              <p className="text-sm text-stone-500 mt-1">
-                {formatDKK(pricingSettings.potteryWheelPerHourOre)}/time pr. stk.
-              </p>
-              <div className="mt-4 flex gap-2 flex-wrap">
-                {Array.from({ length: WORKSHOP_CONFIG.maxPotteryWheels + 1 }, (_, i) => i).map(
-                  (count) => (
-                    <button
-                      key={count}
-                      type="button"
-                      onClick={() => setPotteryWheels(count)}
-                      className={`flex h-12 min-w-12 items-center justify-center rounded-xl px-3 text-lg font-medium transition-colors ${
-                        potteryWheels === count
-                          ? "bg-brand text-white"
-                          : "bg-stone-50 text-stone-700 hover:bg-stone-100"
-                      }`}
-                    >
-                      {count}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-          </div>
+        {step === 4 && startTime && endTime && (
+          <PotteryWheelStep
+            bookingStart={startTime}
+            bookingEnd={endTime}
+            persons={persons}
+            pricePerHourOre={pricingSettings.potteryWheelPerHourOre}
+            reservations={potteryWheelReservations}
+            onChange={(next) => {
+              setPotteryWheelReservations(next);
+              setPotteryWheelError("");
+            }}
+            error={potteryWheelError}
+          />
+        )}
+
+        {step === 4 && (!startTime || !endTime) && (
+          <p className="text-sm text-stone-500">Vælg dato og tid først.</p>
         )}
 
         {step === 5 && (
@@ -290,12 +311,20 @@ export function BookingWizard({
                 <span className="text-stone-500">Personer</span>
                 <span className="font-medium text-stone-900">{persons}</span>
               </div>
-              {potteryWheels > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Drejeskive</span>
-                  <span className="font-medium text-stone-900">
-                    {potteryWheels} stk.
-                  </span>
+              {potteryWheelReservations.length > 0 && (
+                <div className="space-y-1">
+                  <span className="text-stone-500">Drejeskiver</span>
+                  {potteryWheelReservations.map((reservation) => (
+                    <div
+                      key={reservation.clientId}
+                      className="flex justify-between text-stone-900"
+                    >
+                      <span className="font-medium">Drejeskive {reservation.wheelNumber}</span>
+                      <span>
+                        {reservation.fromTime}–{reservation.toTime}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
               {occupancy.length > 0 && (

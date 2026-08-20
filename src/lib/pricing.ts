@@ -1,10 +1,14 @@
 import { formatDKK, SubscriptionPlanKey } from "./config";
 import { PricingSettings } from "./pricing-settings";
+import {
+  PotteryWheelReservationInput,
+  reservationDurationHours,
+} from "./pottery-wheels";
 
 export type BookingPriceInput = {
   hours: number;
   persons: number;
-  potteryWheels: number;
+  potteryWheelReservations: PotteryWheelReservationInput[];
   subscriptionHoursAvailable?: number;
 };
 
@@ -27,11 +31,28 @@ function getBundlePriceOre(hours: number, settings: PricingSettings): number {
   return hourly * hours;
 }
 
+function calculatePotteryWheelPriceOre(
+  reservations: PotteryWheelReservationInput[],
+  pricePerHourOre: number
+): number {
+  return reservations.reduce((sum, reservation) => {
+    const start = new Date(reservation.startTime);
+    const end = new Date(reservation.endTime);
+    const durationHours = reservationDurationHours(start, end);
+    return sum + durationHours * pricePerHourOre;
+  }, 0);
+}
+
 export function calculateBookingPrice(
   input: BookingPriceInput,
   settings: PricingSettings
 ): BookingPriceResult {
-  const { hours, persons, potteryWheels, subscriptionHoursAvailable = 0 } = input;
+  const {
+    hours,
+    persons,
+    potteryWheelReservations,
+    subscriptionHoursAvailable = 0,
+  } = input;
 
   const subscriptionHoursUsed = Math.min(hours, subscriptionHoursAvailable);
   const extraHours = hours - subscriptionHoursUsed;
@@ -43,10 +64,10 @@ export function calculateBookingPrice(
       : 0;
   const extraPriceOre = fullBundleOre - coveredBundleOre;
 
-  const potteryWheelPriceOre =
-    potteryWheels > 0
-      ? potteryWheels * hours * settings.potteryWheelPerHourOre
-      : 0;
+  const potteryWheelPriceOre = calculatePotteryWheelPriceOre(
+    potteryWheelReservations,
+    settings.potteryWheelPerHourOre
+  );
 
   const totalPriceOre = extraPriceOre + potteryWheelPriceOre;
 
@@ -60,9 +81,9 @@ export function calculateBookingPrice(
       `${formatBookingDurationLabel(hours, subscriptionHoursUsed, persons, settings)} = ${formatDKK(extraPriceOre)}`
     );
   }
-  if (potteryWheels > 0) {
+  if (potteryWheelReservations.length > 0) {
     breakdown.push(
-      `Drejeskive: ${potteryWheels} stk. × ${hours} timer × ${formatDKK(settings.potteryWheelPerHourOre)} = ${formatDKK(potteryWheelPriceOre)}`
+      `Drejeskive: ${potteryWheelReservations.length} stk. reserveret = ${formatDKK(potteryWheelPriceOre)}`
     );
   }
 

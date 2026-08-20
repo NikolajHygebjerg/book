@@ -6,7 +6,8 @@ export const WORKSHOP_CONFIG = {
   bookingHourOptions: [1, 2, 3, 4, 5, 6, 12, 24] as const,
   minPersons: 1,
   maxPersons: 10,
-  maxPotteryWheels: 10,
+  /** Faste drejeskiver i værkstedet (nr. 1–7) */
+  totalPotteryWheels: 7,
   openHour: 0,
   closeHour: 24,
 } as const;

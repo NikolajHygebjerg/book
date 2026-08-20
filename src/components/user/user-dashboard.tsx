@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import { format } from "date-fns";
 import { da } from "date-fns/locale";
 import { formatDKK } from "@/lib/config";
+import { formatReservationRange } from "@/lib/pottery-wheels";
 
 type UserData = {
   id: string;
@@ -17,7 +18,11 @@ type UserData = {
     endTime: string;
     hours: number;
     persons: number;
-    potteryWheels: number;
+    potteryWheelReservations: Array<{
+      wheelNumber: number;
+      startTime: string;
+      endTime: string;
+    }>;
     totalPriceOre: number;
   }>;
 };
@@ -126,9 +131,20 @@ export function UserDashboard({ initialUser }: { initialUser: UserData }) {
                   </p>
                   <p className="text-stone-500">
                     {booking.hours} timer · {booking.persons} person(er)
-                    {booking.potteryWheels > 0 &&
-                      ` · ${booking.potteryWheels} drejeskive(r)`}
                   </p>
+                  {booking.potteryWheelReservations.length > 0 && (
+                    <ul className="mt-1 text-stone-500 text-xs space-y-0.5">
+                      {booking.potteryWheelReservations.map((reservation) => (
+                        <li key={`${reservation.wheelNumber}-${reservation.startTime}`}>
+                          Drejeskive {reservation.wheelNumber}:{" "}
+                          {formatReservationRange(
+                            new Date(reservation.startTime),
+                            new Date(reservation.endTime)
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 {booking.totalPriceOre > 0 && (
                   <span className="text-stone-600">{formatDKK(booking.totalPriceOre)}</span>
