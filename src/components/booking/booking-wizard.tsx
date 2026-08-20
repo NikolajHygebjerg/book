@@ -374,7 +374,7 @@ export function BookingWizard({
                 {basisPlan.hoursPerWeek} timer om ugen — tryk her
               </p>
               <Link
-                href="/min-side/abonnement"
+                href="/abonnement"
                 className="mt-2 inline-block w-full rounded-xl bg-white border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light transition-colors"
               >
                 Se abonnement
