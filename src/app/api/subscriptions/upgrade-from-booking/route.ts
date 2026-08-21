@@ -67,9 +67,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (availableHours > 0) {
+    if (hours <= availableHours) {
       return NextResponse.json(
-        { error: "Du har stadig abonnementstimer tilbage — book direkte" },
+        { error: "Din booking passer inden for dine resterende abonnementstimer" },
         { status: 400 }
       );
     }

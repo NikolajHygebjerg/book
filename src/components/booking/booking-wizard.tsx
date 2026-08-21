@@ -103,14 +103,16 @@ export function BookingWizard({
     0,
     subscriptionHoursAvailable - pricing.subscriptionHoursUsed
   );
-  const isOutOfSubscriptionHours =
-    hasActiveSubscription && !hasUnlimitedSubscription && subscriptionHoursAvailable === 0;
-  const showSubscriptionHoursInfo = hasActiveSubscription && !isOutOfSubscriptionHours;
-  const showSubscriptionPromo = !hasActiveSubscription || isOutOfSubscriptionHours;
   const upgradePlan = currentSubscriptionPlan
     ? getNextUpgradePlan(currentSubscriptionPlan)
     : null;
   const upgradePlanPricing = upgradePlan ? pricingSettings.subscriptions[upgradePlan] : null;
+  const needsMoreSubscriptionHours =
+    hasActiveSubscription && !hasUnlimitedSubscription && pricing.extraHours > 0;
+  const showUpgradeOption = needsMoreSubscriptionHours && !!upgradePlan;
+  const showSubscriptionHoursInfo =
+    hasActiveSubscription && !hasUnlimitedSubscription;
+  const showSubscriptionPromo = !hasActiveSubscription || needsMoreSubscriptionHours;
 
   const fetchOccupancy = useCallback(async () => {
     if (!startTime) return;
@@ -480,12 +482,16 @@ export function BookingWizard({
 
             {showSubscriptionPromo && (
               <div className="rounded-xl border border-brand-light bg-brand-light p-3 text-center">
-                {isOutOfSubscriptionHours && upgradePlanPricing ? (
+                {showUpgradeOption && upgradePlanPricing ? (
                   <>
                     <p className="text-sm text-stone-700">
-                      Du har brugt alle dine abonnementstimer denne måned. Opgrader til{" "}
-                      {upgradePlanPricing.name} ({formatDKK(upgradePlanPricing.monthlyPriceOre)}/md)
-                      og gennemfør bookingen uden at betale for timerne.
+                      {subscriptionHoursAvailable > 0
+                        ? `Du har kun ${subscriptionHoursAvailable} ${
+                            subscriptionHoursAvailable === 1 ? "time" : "timer"
+                          } tilbage, men booker ${hours} ${
+                            hours === 1 ? "time" : "timer"
+                          }. Opgrader til ${upgradePlanPricing.name} (${formatDKK(upgradePlanPricing.monthlyPriceOre)}/md) og gennemfør bookingen uden at betale for de ekstra timer.`
+                        : `Du har brugt alle dine abonnementstimer denne måned. Opgrader til ${upgradePlanPricing.name} (${formatDKK(upgradePlanPricing.monthlyPriceOre)}/md) og gennemfør bookingen uden at betale for timerne.`}
                     </p>
                     <button
                       type="button"
@@ -498,7 +504,7 @@ export function BookingWizard({
                         : `Opgrader til ${upgradePlanPricing.name} og book`}
                     </button>
                   </>
-                ) : isOutOfSubscriptionHours ? (
+                ) : needsMoreSubscriptionHours ? (
                   <p className="text-sm text-stone-700">
                     Du har brugt alle dine abonnementstimer denne måned og er på det højeste
                     abonnement. Betal for bookingen ovenfor, eller skift abonnement under min side.
