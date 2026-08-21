@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BookingWizard } from "@/components/booking/booking-wizard";
+import { WorkshopCalendar } from "@/components/booking/workshop-calendar";
 import { PricingSettings } from "@/lib/pricing-settings";
 
 type BookPageClientProps = {
@@ -9,6 +10,8 @@ type BookPageClientProps = {
   subscriptionHoursAvailable: number;
   hasUnlimitedSubscription: boolean;
   pricingSettings: PricingSettings;
+  calendarFeedUrl?: string | null;
+  googleCalendarConfigured?: boolean;
 };
 
 export function BookPageClient({
@@ -16,6 +19,8 @@ export function BookPageClient({
   subscriptionHoursAvailable,
   hasUnlimitedSubscription,
   pricingSettings,
+  calendarFeedUrl,
+  googleCalendarConfigured = false,
 }: BookPageClientProps) {
   const [step, setStep] = useState(1);
   const isOverview = step === 5;
@@ -42,6 +47,10 @@ export function BookPageClient({
         subscriptionHoursAvailable={subscriptionHoursAvailable}
         pricingSettings={pricingSettings}
         onStepChange={setStep}
+      />
+      <WorkshopCalendar
+        calendarFeedUrl={calendarFeedUrl}
+        googleCalendarConfigured={googleCalendarConfigured}
       />
     </div>
   );
