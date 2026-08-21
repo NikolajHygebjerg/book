@@ -1,6 +1,6 @@
 import { differenceInMinutes } from "date-fns";
 import { WORKSHOP_CONFIG } from "./config";
-import { parseBookingDateTime, toTimeInputValue } from "./booking-slots";
+import { parseBookingDateTime, toTimeInputValue, isWholeHourDate } from "./booking-slots";
 
 export type PotteryWheelReservationInput = {
   wheelNumber: number;
@@ -73,6 +73,10 @@ export function validatePotteryWheelReservations(
 
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
       return "Ugyldigt tidspunkt for drejeskive";
+    }
+
+    if (!isWholeHourDate(start) || !isWholeHourDate(end)) {
+      return "Drejeskive-tider skal være hele timer (fx 10:00, 11:00)";
     }
 
     if (start >= end) {

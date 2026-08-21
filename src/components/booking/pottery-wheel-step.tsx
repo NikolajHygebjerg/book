@@ -6,7 +6,7 @@ import {
   createPotteryWheelDraft,
   PotteryWheelReservationDraft,
 } from "@/lib/pottery-wheels";
-import { toTimeInputValue } from "@/lib/booking-slots";
+import { toTimeInputValue, getWholeHourOptionsInRange } from "@/lib/booking-slots";
 
 type PotteryWheelStepProps = {
   bookingStart: Date;
@@ -29,6 +29,7 @@ export function PotteryWheelStep({
 }: PotteryWheelStepProps) {
   const minTime = toTimeInputValue(bookingStart);
   const maxTime = toTimeInputValue(bookingEnd);
+  const bookingHourOptions = getWholeHourOptionsInRange(bookingStart, bookingEnd);
   const canAdd = reservations.length < persons;
 
   const addReservation = () => {
@@ -129,30 +130,38 @@ export function PotteryWheelStep({
 
                 <label className="block">
                   <span className="text-xs font-medium text-stone-600">Fra</span>
-                  <input
-                    type="time"
+                  <select
                     value={reservation.fromTime}
-                    min={minTime}
-                    max={maxTime}
                     onChange={(e) =>
                       updateReservation(reservation.clientId, { fromTime: e.target.value })
                     }
                     className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
-                  />
+                  >
+                    {bookingHourOptions.map((hour) => (
+                      <option key={hour} value={hour}>
+                        {hour}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="block">
                   <span className="text-xs font-medium text-stone-600">Til</span>
-                  <input
-                    type="time"
+                  <select
                     value={reservation.toTime}
-                    min={minTime}
-                    max={maxTime}
                     onChange={(e) =>
                       updateReservation(reservation.clientId, { toTime: e.target.value })
                     }
                     className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
-                  />
+                  >
+                    {bookingHourOptions
+                      .filter((hour) => hour > reservation.fromTime)
+                      .map((hour) => (
+                        <option key={hour} value={hour}>
+                          {hour}
+                        </option>
+                      ))}
+                  </select>
                 </label>
               </div>
             </div>

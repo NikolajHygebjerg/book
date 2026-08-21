@@ -11,7 +11,7 @@ import { getAvailableSubscriptionHours } from "@/lib/subscription";
 import { getPricingSettings } from "@/lib/pricing-settings";
 import { getStripe } from "@/lib/stripe";
 import { findNextAvailableSlot } from "@/lib/find-next-slot";
-import { toDateInputValue, toTimeInputValue, isBookingStartInPast } from "@/lib/booking-slots";
+import { toDateInputValue, toTimeInputValue, isBookingStartInPast, isWholeHourDate } from "@/lib/booking-slots";
 import { WORKSHOP_CONFIG, isValidBookingHours } from "@/lib/config";
 
 import { findPotteryWheelConflicts } from "@/lib/pottery-wheels-db";
@@ -56,6 +56,13 @@ export async function POST(request: Request) {
     if (isBookingStartInPast(start)) {
       return NextResponse.json(
         { error: "Starttidspunktet ligger i fortiden — vælg et senere tidspunkt" },
+        { status: 400 }
+      );
+    }
+
+    if (!isWholeHourDate(start)) {
+      return NextResponse.json(
+        { error: "Bookingen skal starte på et helt timetal (fx kl. 10:00)" },
         { status: 400 }
       );
     }

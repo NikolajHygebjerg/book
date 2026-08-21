@@ -32,6 +32,48 @@ export function parseBookingDateTime(date: string, time: string): Date {
   return new Date(new TZDate(`${date}T${time}:00`, WORKSHOP_TIMEZONE).getTime());
 }
 
+/** Kun HH:00 — fx "21:00" ja, "21:17" nej */
+export function isWholeHourTimeString(time: string): boolean {
+  return /^\d{2}:\d{2}$/.test(time) && time.endsWith(":00");
+}
+
+export function isWholeHourDate(date: Date): boolean {
+  const tz = new TZDate(date, WORKSHOP_TIMEZONE);
+  return tz.getMinutes() === 0 && tz.getSeconds() === 0 && tz.getMilliseconds() === 0;
+}
+
+/** Hele timer man kan vælge som booking-start på en given dato */
+export function getSelectableBookingHours(date: string): string[] {
+  const hours: string[] = [];
+  let startHour = 0;
+
+  if (date === getTodayDateInputValue()) {
+    startHour = new TZDate(getNextHourSlot(), WORKSHOP_TIMEZONE).getHours();
+  }
+
+  for (let hour = startHour; hour <= 23; hour++) {
+    hours.push(`${hour.toString().padStart(2, "0")}:00`);
+  }
+
+  return hours;
+}
+
+/** Hele timer fra start (inkl.) til slut (ekskl. eller inkl. afhængigt af range) */
+export function getWholeHourOptionsInRange(start: Date, end: Date): string[] {
+  const options: string[] = [];
+  const cursor = new TZDate(start, WORKSHOP_TIMEZONE);
+  cursor.setMinutes(0, 0, 0);
+
+  const endMs = new TZDate(end, WORKSHOP_TIMEZONE).getTime();
+
+  while (cursor.getTime() <= endMs) {
+    options.push(toTimeInputValue(new Date(cursor.getTime())));
+    cursor.setHours(cursor.getHours() + 1);
+  }
+
+  return options;
+}
+
 export function getMinTimeForDate(date: string): string | undefined {
   if (date !== getTodayDateInputValue()) return undefined;
   return toTimeInputValue(getNextHourSlot());

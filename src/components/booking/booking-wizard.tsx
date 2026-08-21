@@ -15,7 +15,7 @@ import {
   validatePotteryWheelDrafts,
 } from "@/lib/pottery-wheels";
 import {
-  getMinTimeForDate,
+  getSelectableBookingHours,
   getTodayDateInputValue,
   parseBookingDateTime,
 } from "@/lib/booking-slots";
@@ -59,6 +59,15 @@ export function BookingWizard({
   useEffect(() => {
     onStepChange?.(step);
   }, [step, onStepChange]);
+
+  const selectableHours = date ? getSelectableBookingHours(date) : [];
+
+  useEffect(() => {
+    if (!date || selectableHours.length === 0) return;
+    if (!time || !selectableHours.includes(time)) {
+      setTime(selectableHours[0]);
+    }
+  }, [date, selectableHours, time]);
 
   const startTime = date && time ? parseBookingDateTime(date, time) : null;
   const endTime = startTime ? addHours(startTime, hours) : null;
@@ -249,6 +258,7 @@ export function BookingWizard({
         {step === 3 && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-stone-900">Vælg dato og tid</h2>
+            <p className="text-sm text-stone-500">Kun hele timer — fx kl. 10:00, 11:00, 12:00.</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">Dato</label>
@@ -262,13 +272,22 @@ export function BookingWizard({
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">Starttid</label>
-                <input
-                  type="time"
+                <select
                   value={time}
-                  min={date ? getMinTimeForDate(date) : undefined}
+                  disabled={!date || selectableHours.length === 0}
                   onChange={(e) => setTime(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
-                />
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light disabled:bg-stone-50"
+                >
+                  {!date && <option value="">Vælg dato først</option>}
+                  {date && selectableHours.length === 0 && (
+                    <option value="">Ingen ledige timer i dag</option>
+                  )}
+                  {selectableHours.map((hour) => (
+                    <option key={hour} value={hour}>
+                      kl. {hour}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             {startTime && endTime && (
