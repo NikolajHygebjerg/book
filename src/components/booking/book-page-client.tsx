@@ -8,6 +8,7 @@ import { PricingSettings } from "@/lib/pricing-settings";
 type BookPageClientProps = {
   userName: string;
   subscriptionHoursAvailable: number;
+  hasActiveSubscription: boolean;
   hasUnlimitedSubscription: boolean;
   pricingSettings: PricingSettings;
 };
@@ -15,6 +16,7 @@ type BookPageClientProps = {
 export function BookPageClient({
   userName,
   subscriptionHoursAvailable,
+  hasActiveSubscription,
   hasUnlimitedSubscription,
   pricingSettings,
 }: BookPageClientProps) {
@@ -41,6 +43,8 @@ export function BookPageClient({
       )}
       <BookingWizard
         subscriptionHoursAvailable={subscriptionHoursAvailable}
+        hasActiveSubscription={hasActiveSubscription}
+        hasUnlimitedSubscription={hasUnlimitedSubscription}
         pricingSettings={pricingSettings}
         onStepChange={setStep}
       />

@@ -1,16 +1,17 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { BookPageClient } from "@/components/booking/book-page-client";
-import { getAvailableSubscriptionHours } from "@/lib/subscription";
+import { getActiveSubscription, getAvailableSubscriptionHours } from "@/lib/subscription";
 import { getPricingSettings } from "@/lib/pricing-settings";
 
 export default async function BookPage() {
   const session = await auth();
   if (!session) redirect("/");
 
-  const [subscriptionHours, pricingSettings] = await Promise.all([
+  const [subscriptionHours, pricingSettings, subscription] = await Promise.all([
     getAvailableSubscriptionHours(session.user.id),
     getPricingSettings(),
+    getActiveSubscription(session.user.id),
   ]);
   const available = subscriptionHours === Infinity ? 999 : subscriptionHours;
 
@@ -18,6 +19,7 @@ export default async function BookPage() {
     <BookPageClient
       userName={session.user.name ?? ""}
       subscriptionHoursAvailable={available}
+      hasActiveSubscription={!!subscription}
       hasUnlimitedSubscription={subscriptionHours === Infinity}
       pricingSettings={pricingSettings}
     />
