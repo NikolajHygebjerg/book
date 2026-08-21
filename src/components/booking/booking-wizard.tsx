@@ -5,7 +5,7 @@ import { format, addHours } from "date-fns";
 import { da } from "date-fns/locale";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { WORKSHOP_CONFIG, formatDKK, formatBookingHours, formatBookingHoursShort } from "@/lib/config";
+import { WORKSHOP_CONFIG, formatDKK, formatBookingHours, formatBookingHoursShort, SubscriptionPlanKey, getNextUpgradePlan } from "@/lib/config";
 import { calculateBookingPrice } from "@/lib/pricing";
 import { PricingSettings } from "@/lib/pricing-settings";
 import { PotteryWheelStep } from "@/components/booking/pottery-wheel-step";
@@ -37,12 +37,14 @@ export function BookingWizard({
   subscriptionHoursAvailable = 0,
   hasActiveSubscription = false,
   hasUnlimitedSubscription = false,
+  currentSubscriptionPlan,
   pricingSettings,
   onStepChange,
 }: {
   subscriptionHoursAvailable?: number;
   hasActiveSubscription?: boolean;
   hasUnlimitedSubscription?: boolean;
+  currentSubscriptionPlan?: SubscriptionPlanKey | null;
   pricingSettings: PricingSettings;
   onStepChange?: (step: Step) => void;
 }) {
@@ -57,6 +59,7 @@ export function BookingWizard({
   const [potteryWheelError, setPotteryWheelError] = useState("");
   const [occupancy, setOccupancy] = useState<OccupancySlot[]>([]);
   const [loading, setLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [error, setError] = useState("");
   const [canBook, setCanBook] = useState(true);
 
@@ -104,6 +107,10 @@ export function BookingWizard({
     hasActiveSubscription && !hasUnlimitedSubscription && subscriptionHoursAvailable === 0;
   const showSubscriptionHoursInfo = hasActiveSubscription && !isOutOfSubscriptionHours;
   const showSubscriptionPromo = !hasActiveSubscription || isOutOfSubscriptionHours;
+  const upgradePlan = currentSubscriptionPlan
+    ? getNextUpgradePlan(currentSubscriptionPlan)
+    : null;
+  const upgradePlanPricing = upgradePlan ? pricingSettings.subscriptions[upgradePlan] : null;
 
   const fetchOccupancy = useCallback(async () => {
     if (!startTime) return;
@@ -152,6 +159,40 @@ export function BookingWizard({
 
   const handleBack = () => {
     if (step > 1) setStep((s) => (s - 1) as Step);
+  };
+
+  const handleUpgradeFromBooking = async () => {
+    if (!startTime || !upgradePlan) return;
+    setUpgradeLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/subscriptions/upgrade-from-booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hours,
+          persons,
+          startTime: startTime.toISOString(),
+          potteryWheelReservations: potteryWheelInputs,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Noget gik galt");
+        return;
+      }
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+    } catch {
+      setError("Kunne ikke starte opgradering");
+    } finally {
+      setUpgradeLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -439,19 +480,29 @@ export function BookingWizard({
 
             {showSubscriptionPromo && (
               <div className="rounded-xl border border-brand-light bg-brand-light p-3 text-center">
-                {isOutOfSubscriptionHours ? (
+                {isOutOfSubscriptionHours && upgradePlanPricing ? (
                   <>
                     <p className="text-sm text-stone-700">
-                      Du har brugt alle dine abonnementstimer denne måned. Opgrader dit abonnement
-                      for flere timer — tryk her
+                      Du har brugt alle dine abonnementstimer denne måned. Opgrader til{" "}
+                      {upgradePlanPricing.name} ({formatDKK(upgradePlanPricing.monthlyPriceOre)}/md)
+                      og gennemfør bookingen uden at betale for timerne.
                     </p>
-                    <Link
-                      href="/min-side/abonnement"
-                      className="mt-2 inline-block w-full rounded-xl bg-white border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light transition-colors"
+                    <button
+                      type="button"
+                      onClick={handleUpgradeFromBooking}
+                      disabled={upgradeLoading || loading || !canBook}
+                      className="mt-2 inline-block w-full rounded-xl bg-white border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-50 transition-colors"
                     >
-                      Opgrader abonnement
-                    </Link>
+                      {upgradeLoading
+                        ? "Starter opgradering..."
+                        : `Opgrader til ${upgradePlanPricing.name} og book`}
+                    </button>
                   </>
+                ) : isOutOfSubscriptionHours ? (
+                  <p className="text-sm text-stone-700">
+                    Du har brugt alle dine abonnementstimer denne måned og er på det højeste
+                    abonnement. Betal for bookingen ovenfor, eller skift abonnement under min side.
+                  </p>
                 ) : (
                   <>
                     <p className="text-sm text-stone-700">

@@ -56,6 +56,16 @@ export const PRICING = {
 
 export type SubscriptionPlanKey = keyof typeof PRICING.subscriptions;
 
+const SUBSCRIPTION_PLAN_ORDER: SubscriptionPlanKey[] = ["BASIS", "PLUS", "UNLIMITED"];
+
+export function getNextUpgradePlan(
+  currentPlan: SubscriptionPlanKey
+): SubscriptionPlanKey | null {
+  const index = SUBSCRIPTION_PLAN_ORDER.indexOf(currentPlan);
+  if (index === -1 || index >= SUBSCRIPTION_PLAN_ORDER.length - 1) return null;
+  return SUBSCRIPTION_PLAN_ORDER[index + 1];
+}
+
 export function formatDKK(ore: number): string {
   return `${(ore / 100).toFixed(0)} kr`;
 }

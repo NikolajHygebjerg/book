@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { BookPageClient } from "@/components/booking/book-page-client";
 import { getActiveSubscription, getAvailableSubscriptionHours } from "@/lib/subscription";
 import { getPricingSettings } from "@/lib/pricing-settings";
+import { SubscriptionPlanKey } from "@/lib/config";
 
 export default async function BookPage() {
   const session = await auth();
@@ -21,6 +22,9 @@ export default async function BookPage() {
       subscriptionHoursAvailable={available}
       hasActiveSubscription={!!subscription}
       hasUnlimitedSubscription={subscriptionHours === Infinity}
+      currentSubscriptionPlan={
+        subscription ? (subscription.plan as SubscriptionPlanKey) : null
+      }
       pricingSettings={pricingSettings}
     />
   );

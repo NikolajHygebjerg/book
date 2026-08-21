@@ -4,12 +4,14 @@ import { useState } from "react";
 import { BookingWizard } from "@/components/booking/booking-wizard";
 import { WorkshopCalendar } from "@/components/booking/workshop-calendar";
 import { PricingSettings } from "@/lib/pricing-settings";
+import { SubscriptionPlanKey } from "@/lib/config";
 
 type BookPageClientProps = {
   userName: string;
   subscriptionHoursAvailable: number;
   hasActiveSubscription: boolean;
   hasUnlimitedSubscription: boolean;
+  currentSubscriptionPlan: SubscriptionPlanKey | null;
   pricingSettings: PricingSettings;
 };
 
@@ -18,6 +20,7 @@ export function BookPageClient({
   subscriptionHoursAvailable,
   hasActiveSubscription,
   hasUnlimitedSubscription,
+  currentSubscriptionPlan,
   pricingSettings,
 }: BookPageClientProps) {
   const [step, setStep] = useState(1);
@@ -45,6 +48,7 @@ export function BookPageClient({
         subscriptionHoursAvailable={subscriptionHoursAvailable}
         hasActiveSubscription={hasActiveSubscription}
         hasUnlimitedSubscription={hasUnlimitedSubscription}
+        currentSubscriptionPlan={currentSubscriptionPlan}
         pricingSettings={pricingSettings}
         onStepChange={setStep}
       />

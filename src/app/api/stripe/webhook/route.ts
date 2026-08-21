@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { recordSubscriptionHoursUsed } from "@/lib/subscription";
 import { syncBookingToGoogleCalendar } from "@/lib/google-calendar";
+import { finalizePendingBookingAfterUpgrade } from "@/lib/finalize-pending-booking-after-upgrade";
 import { SubscriptionPlan, SubscriptionStatus } from "@/generated/prisma/client";
 import Stripe from "stripe";
 
@@ -75,19 +76,52 @@ export async function POST(request: Request) {
           typeof session.subscription === "string"
             ? session.subscription
             : session.subscription?.id;
+        const customerId =
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer?.id;
+        const upgradeFromBooking = session.metadata.upgradeFromBooking === "true";
+        const bookingId = session.metadata.bookingId;
+        const previousStripeSubscriptionId =
+          session.metadata.previousStripeSubscriptionId || undefined;
 
-        await db.subscription.create({
-          data: {
-            userId: session.metadata.userId,
-            plan,
-            status: "ACTIVE",
-            stripeSubscriptionId: subscriptionId,
-            stripeCustomerId:
-              typeof session.customer === "string"
-                ? session.customer
-                : session.customer?.id,
-          },
-        });
+        if (upgradeFromBooking && bookingId) {
+          if (
+            previousStripeSubscriptionId &&
+            previousStripeSubscriptionId !== subscriptionId
+          ) {
+            try {
+              await getStripe().subscriptions.cancel(previousStripeSubscriptionId);
+            } catch {
+              // Old subscription may already be cancelled
+            }
+          }
+
+          await db.subscription.updateMany({
+            where: {
+              userId: session.metadata.userId,
+              status: "ACTIVE",
+            },
+            data: {
+              plan,
+              stripeSubscriptionId: subscriptionId,
+              stripeCustomerId: customerId,
+              status: "ACTIVE",
+            },
+          });
+
+          await finalizePendingBookingAfterUpgrade(session.metadata.userId, bookingId);
+        } else {
+          await db.subscription.create({
+            data: {
+              userId: session.metadata.userId,
+              plan,
+              status: "ACTIVE",
+              stripeSubscriptionId: subscriptionId,
+              stripeCustomerId: customerId,
+            },
+          });
+        }
       }
       break;
     }
