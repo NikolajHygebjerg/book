@@ -100,6 +100,10 @@ export function BookingWizard({
     0,
     subscriptionHoursAvailable - pricing.subscriptionHoursUsed
   );
+  const isOutOfSubscriptionHours =
+    hasActiveSubscription && !hasUnlimitedSubscription && subscriptionHoursAvailable === 0;
+  const showSubscriptionHoursInfo = hasActiveSubscription && !isOutOfSubscriptionHours;
+  const showSubscriptionPromo = !hasActiveSubscription || isOutOfSubscriptionHours;
 
   const fetchOccupancy = useCallback(async () => {
     if (!startTime) return;
@@ -384,7 +388,7 @@ export function BookingWizard({
               <span>{formatDKK(totalPriceOre)}</span>
             </div>
 
-            {hasActiveSubscription && (
+            {showSubscriptionHoursInfo && (
               <div className="rounded-xl border border-brand-light bg-brand-light p-4">
                 {hasUnlimitedSubscription ? (
                   <p className="text-sm font-medium text-brand-dark">
@@ -433,21 +437,38 @@ export function BookingWizard({
                   : `Betal ${formatDKK(totalPriceOre)}`}
             </button>
 
-            {!hasActiveSubscription && (
+            {showSubscriptionPromo && (
               <div className="rounded-xl border border-brand-light bg-brand-light p-3 text-center">
-                <p className="text-sm text-stone-700">
-                  Køb abonnement fra {formatDKK(basisPlan(pricingSettings).monthlyPriceOre)}/md for{" "}
-                  {basisPlan(pricingSettings).hoursPerMonth === "unlimited"
-                    ? "ubegrænset"
-                    : `${basisPlan(pricingSettings).hoursPerMonth} timer om måneden`}{" "}
-                  — tryk her
-                </p>
-                <Link
-                  href="/abonnement"
-                  className="mt-2 inline-block w-full rounded-xl bg-white border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light transition-colors"
-                >
-                  Se abonnement
-                </Link>
+                {isOutOfSubscriptionHours ? (
+                  <>
+                    <p className="text-sm text-stone-700">
+                      Du har brugt alle dine abonnementstimer denne måned. Opgrader dit abonnement
+                      for flere timer — tryk her
+                    </p>
+                    <Link
+                      href="/min-side/abonnement"
+                      className="mt-2 inline-block w-full rounded-xl bg-white border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light transition-colors"
+                    >
+                      Opgrader abonnement
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-stone-700">
+                      Køb abonnement fra {formatDKK(basisPlan(pricingSettings).monthlyPriceOre)}/md for{" "}
+                      {basisPlan(pricingSettings).hoursPerMonth === "unlimited"
+                        ? "ubegrænset"
+                        : `${basisPlan(pricingSettings).hoursPerMonth} timer om måneden`}{" "}
+                      — tryk her
+                    </p>
+                    <Link
+                      href="/abonnement"
+                      className="mt-2 inline-block w-full rounded-xl bg-white border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light transition-colors"
+                    >
+                      Se abonnement
+                    </Link>
+                  </>
+                )}
               </div>
             )}
           </div>
