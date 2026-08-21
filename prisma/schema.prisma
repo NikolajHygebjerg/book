@@ -104,6 +104,7 @@ model Booking {
   extraHoursPaid   Int           @default(0)
   totalPriceOre    Int           @default(0)
   stripeSessionId  String?
+  googleEventId    String?       @unique
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
@@ -192,4 +193,16 @@ model SubscriptionPlanConfig {
   hoursPerMonth   Int
   monthlyPriceOre Int
   updatedAt       DateTime         @updatedAt
+}
+
+model GoogleCalendarIntegration {
+  id                  String    @id @default("default")
+  calendarId          String
+  calendarSummary     String?
+  accessToken         String?   @db.Text
+  refreshToken        String    @db.Text
+  tokenExpiry         DateTime?
+  syncBookingsEnabled Boolean   @default(true)
+  connectedByEmail    String
+  updatedAt           DateTime  @updatedAt
 }

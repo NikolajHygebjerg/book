@@ -3,7 +3,6 @@ import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { da } from "date-fns/locale";
 import { auth } from "@/lib/auth";
 import { getCalendarGrid } from "@/lib/calendar/service";
-import { isGoogleCalendarConfigured } from "@/lib/google-calendar";
 import { toDateInputValue } from "@/lib/booking-slots";
 import { TZDate } from "@date-fns/tz";
 import { WORKSHOP_TIMEZONE } from "@/lib/booking-slots";
@@ -39,9 +38,5 @@ export async function GET(request: Request) {
 
   const grid = await getCalendarGrid(fromDate, toDate);
 
-  return NextResponse.json({
-    ...grid,
-    weekLabel: format(parseISO(fromDate), "d. MMM", { locale: da }),
-    googleCalendarConfigured: isGoogleCalendarConfigured(),
-  });
+  return NextResponse.json(grid);
 }

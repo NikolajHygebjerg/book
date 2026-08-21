@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getStripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { recordSubscriptionHoursUsed } from "@/lib/subscription";
+import { syncBookingToGoogleCalendar } from "@/lib/google-calendar";
 import { SubscriptionPlan, SubscriptionStatus } from "@/generated/prisma/client";
 import Stripe from "stripe";
 
@@ -60,6 +61,12 @@ export async function POST(request: Request) {
             stripeSessionId: session.id,
           },
         });
+
+        try {
+          await syncBookingToGoogleCalendar(bookingId);
+        } catch {
+          // Payment succeeded; Google sync can be retried manually
+        }
       }
 
       if (session.mode === "subscription" && session.metadata?.userId) {

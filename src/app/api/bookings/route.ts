@@ -4,6 +4,8 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { canAccommodate } from "@/lib/capacity";
+import { getExistingCapacityBlocks } from "@/lib/capacity-blocks";
+import { syncBookingToGoogleCalendar } from "@/lib/google-calendar";
 import { calculateBookingPrice } from "@/lib/pricing";
 import { getAvailableSubscriptionHours } from "@/lib/subscription";
 import { getPricingSettings } from "@/lib/pricing-settings";
@@ -75,18 +77,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: wheelConflictError }, { status: 409 });
     }
 
-    const existingBookings = await db.booking.findMany({
-      where: {
-        status: "CONFIRMED",
-        startTime: { lt: end },
-        endTime: { gt: start },
-      },
-      select: {
-        startTime: true,
-        endTime: true,
-        persons: true,
-      },
-    });
+    const existingBookings = await getExistingCapacityBlocks(start, end);
 
     const capacityCheck = canAccommodate(start, hours, persons, existingBookings);
     if (!capacityCheck.ok) {
@@ -135,6 +126,12 @@ export async function POST(request: Request) {
       const { recordSubscriptionHoursUsed } = await import("@/lib/subscription");
       if (pricing.subscriptionHoursUsed > 0) {
         await recordSubscriptionHoursUsed(session.user.id, pricing.subscriptionHoursUsed);
+      }
+
+      try {
+        await syncBookingToGoogleCalendar(booking.id);
+      } catch {
+        // Booking confirmed even if Google sync fails
       }
 
       return NextResponse.json({
@@ -205,20 +202,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Du skal være logget ind" }, { status: 401 });
     }
 
-    const slot = await findNextAvailableSlot(hours, persons, async (from, to) =>
-      db.booking.findMany({
-        where: {
-          status: "CONFIRMED",
-          startTime: { lt: to },
-          endTime: { gt: from },
-        },
-        select: {
-          startTime: true,
-          endTime: true,
-          persons: true,
-        },
-      })
-    );
+    const slot = await findNextAvailableSlot(hours, persons, getExistingCapacityBlocks);
 
     if (!slot) {
       return NextResponse.json({ error: "Ingen ledige tider de næste 14 dage" }, { status: 404 });
@@ -240,18 +224,7 @@ export async function GET(request: Request) {
   const start = new Date(startTime);
   const end = addHours(start, hours);
 
-  const existingBookings = await db.booking.findMany({
-    where: {
-      status: "CONFIRMED",
-      startTime: { lt: end },
-      endTime: { gt: start },
-    },
-    select: {
-      startTime: true,
-      endTime: true,
-      persons: true,
-    },
-  });
+  const existingBookings = await getExistingCapacityBlocks(start, end);
 
   const capacityCheck = canAccommodate(start, hours, persons, existingBookings);
 

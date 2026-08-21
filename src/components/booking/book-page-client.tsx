@@ -10,8 +10,6 @@ type BookPageClientProps = {
   subscriptionHoursAvailable: number;
   hasUnlimitedSubscription: boolean;
   pricingSettings: PricingSettings;
-  calendarFeedUrl?: string | null;
-  googleCalendarConfigured?: boolean;
 };
 
 export function BookPageClient({
@@ -19,8 +17,6 @@ export function BookPageClient({
   subscriptionHoursAvailable,
   hasUnlimitedSubscription,
   pricingSettings,
-  calendarFeedUrl,
-  googleCalendarConfigured = false,
 }: BookPageClientProps) {
   const [step, setStep] = useState(1);
   const isOverview = step === 5;
@@ -48,10 +44,7 @@ export function BookPageClient({
         pricingSettings={pricingSettings}
         onStepChange={setStep}
       />
-      <WorkshopCalendar
-        calendarFeedUrl={calendarFeedUrl}
-        googleCalendarConfigured={googleCalendarConfigured}
-      />
+      <WorkshopCalendar />
     </div>
   );
 }

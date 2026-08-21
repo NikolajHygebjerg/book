@@ -10,7 +10,7 @@ import {
   subWeeks,
 } from "date-fns";
 import { da } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TZDate } from "@date-fns/tz";
 import { WORKSHOP_CONFIG } from "@/lib/config";
 import { toDateInputValue, WORKSHOP_TIMEZONE } from "@/lib/booking-slots";
@@ -19,15 +19,6 @@ import {
   CALENDAR_DISPLAY_HOUR_START,
 } from "@/lib/calendar/build-grid";
 import type { CalendarDay, CalendarGrid } from "@/lib/calendar/types";
-
-type CalendarApiResponse = CalendarGrid & {
-  googleCalendarConfigured: boolean;
-};
-
-type WorkshopCalendarProps = {
-  calendarFeedUrl?: string | null;
-  googleCalendarConfigured?: boolean;
-};
 
 function getWeekRange(anchor: Date): { from: string; to: string } {
   const weekStart = startOfWeek(new TZDate(anchor, WORKSHOP_TIMEZONE), {
@@ -66,11 +57,12 @@ function HourCell({ slot }: { slot: CalendarDay["hours"][number] }) {
         {slot.attendees.map((attendee) => (
           <li
             key={`${attendee.eventId}-${attendee.firstName}`}
-            className={attendee.source === "google" ? "text-violet-800" : undefined}
+            className={attendee.source === "google" ? "text-violet-800 font-medium" : undefined}
           >
-            {attendee.firstName}
-            {attendee.persons > 1 ? ` ×${attendee.persons}` : ""}
-            {attendee.source === "google" ? " (kursus)" : ""}
+            {attendee.source === "google" ? `Kursus: ${attendee.firstName}` : attendee.firstName}
+            {attendee.source !== "google" && attendee.persons > 1
+              ? ` ×${attendee.persons}`
+              : ""}
           </li>
         ))}
       </ul>
@@ -78,12 +70,9 @@ function HourCell({ slot }: { slot: CalendarDay["hours"][number] }) {
   );
 }
 
-export function WorkshopCalendar({
-  calendarFeedUrl,
-  googleCalendarConfigured = false,
-}: WorkshopCalendarProps) {
+export function WorkshopCalendar() {
   const [weekAnchor, setWeekAnchor] = useState(() => new Date());
-  const [grid, setGrid] = useState<CalendarApiResponse | null>(null);
+  const [grid, setGrid] = useState<CalendarGrid | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -117,11 +106,6 @@ export function WorkshopCalendar({
   useEffect(() => {
     fetchCalendar();
   }, [fetchCalendar]);
-
-  const googleSubscribeUrl = useMemo(() => {
-    if (!calendarFeedUrl) return null;
-    return calendarFeedUrl.replace(/^https?/, "webcal");
-  }, [calendarFeedUrl]);
 
   const displayHours = useMemo(() => {
     const hours: number[] = [];
@@ -174,15 +158,15 @@ export function WorkshopCalendar({
           <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500">
             <span className="inline-flex items-center gap-1">
               <span className="h-3 w-3 rounded bg-brand-light/60 border border-stone-200" />
-              Ledige pladser
+              Booking
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="h-3 w-3 rounded bg-amber-50 border border-amber-200" />
-              Næsten fuldt
+              <span className="h-3 w-3 rounded bg-violet-100 border border-violet-200" />
+              Kursus (10 pladser)
             </span>
             <span className="inline-flex items-center gap-1">
               <span className="h-3 w-3 rounded bg-red-50 border border-red-200" />
-              Fuldt ({WORKSHOP_CONFIG.maxCapacity})
+              Fuldt
             </span>
           </div>
         </div>
@@ -222,40 +206,16 @@ export function WorkshopCalendar({
                   </div>
                   {grid.days.map((day) => {
                     const slot = day.hours[hour - CALENDAR_DISPLAY_HOUR_START];
-                    return <div key={`${day.date}-${hour}`}>{slot ? <HourCell slot={slot} /> : null}</div>;
+                    return (
+                      <div key={`${day.date}-${hour}`}>
+                        {slot ? <HourCell slot={slot} /> : null}
+                      </div>
+                    );
                   })}
                 </div>
               ))}
             </div>
           ) : null}
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="font-medium text-stone-900">Google Kalender</p>
-              <p className="mt-1">
-                Abonnér på værkstedskalenderen i Google Kalender-appen, så du også kan se
-                bookinger der.
-                {googleCalendarConfigured
-                  ? " Kurser fra Google Kalender vises også i oversigten."
-                  : " Kurser kan kobles på via Google Kalender-integration (GOOGLE_CALENDAR_ID)."}
-              </p>
-            </div>
-            {googleSubscribeUrl ? (
-              <a
-                href={googleSubscribeUrl}
-                className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-800 hover:border-brand hover:text-brand transition-colors shrink-0"
-              >
-                <CalendarPlus className="h-4 w-4" />
-                Tilføj til Google Kalender
-              </a>
-            ) : (
-              <p className="text-xs text-stone-500 shrink-0">
-                Sæt CALENDAR_FEED_TOKEN i miljøvariabler for at aktivere abonnementslink.
-              </p>
-            )}
-          </div>
         </div>
       </div>
     </section>
