@@ -30,6 +30,7 @@ export function PotteryWheelStep({
   const minTime = toTimeInputValue(bookingStart);
   const maxTime = toTimeInputValue(bookingEnd);
   const bookingHourOptions = getWholeHourOptionsInRange(bookingStart, bookingEnd);
+  const fromHourOptions = bookingHourOptions.filter((hour) => hour < maxTime);
   const canAdd = reservations.length < persons;
 
   const addReservation = () => {
@@ -48,7 +49,18 @@ export function PotteryWheelStep({
     patch: Partial<Omit<PotteryWheelReservationDraft, "clientId">>
   ) => {
     onChange(
-      reservations.map((r) => (r.clientId === clientId ? { ...r, ...patch } : r))
+      reservations.map((r) => {
+        if (r.clientId !== clientId) return r;
+
+        const next = { ...r, ...patch };
+
+        if (patch.fromTime && next.toTime <= patch.fromTime) {
+          const nextToTime = bookingHourOptions.find((hour) => hour > patch.fromTime!);
+          if (nextToTime) next.toTime = nextToTime;
+        }
+
+        return next;
+      })
     );
   };
 
@@ -137,7 +149,7 @@ export function PotteryWheelStep({
                     }
                     className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-stone-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-light"
                   >
-                    {bookingHourOptions.map((hour) => (
+                    {fromHourOptions.map((hour) => (
                       <option key={hour} value={hour}>
                         {hour}
                       </option>

@@ -229,6 +229,14 @@ export async function GET(request: Request) {
   }
 
   const start = new Date(startTime);
+
+  if (!isWholeHourDate(start)) {
+    return NextResponse.json(
+      { error: "Starttid skal være et helt timetal (fx kl. 10:00)" },
+      { status: 400 }
+    );
+  }
+
   const end = addHours(start, hours);
 
   const existingBookings = await getExistingCapacityBlocks(start, end);
