@@ -87,16 +87,18 @@ export function SubscriptionManager({
         <div className="grid gap-4 sm:grid-cols-3">
           {PLAN_ORDER.map((key) => {
             const plan = pricing.subscriptions[key];
+            const isActive = activePlan === key;
+            const isLoading = loading === key;
+            const isDisabled = !!loading || isActive;
 
-            return (
-              <div
-                key={key}
-                className={`rounded-2xl border-2 p-6 flex flex-col ${
-                  activePlan === key
-                    ? "border-brand bg-brand-light"
-                    : "border-stone-200 bg-white"
-                }`}
-              >
+            const cardClassName = `rounded-2xl border-2 p-6 flex flex-col text-left transition-colors ${
+              isActive
+                ? "border-brand bg-brand-light"
+                : "border-stone-200 bg-white hover:border-brand hover:shadow-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            }`;
+
+            const cardContent = (
+              <>
                 <h3 className="font-semibold text-stone-900 text-lg">{plan.name}</h3>
                 <p className="text-3xl font-bold text-stone-900 mt-2">
                   {formatDKK(plan.monthlyPriceOre)}
@@ -115,18 +117,37 @@ export function SubscriptionManager({
                     Book døgnet rundt (når der ikke er kurser i værkstedet)
                   </li>
                 </ul>
-                <button
-                  onClick={() => handleSubscribe(key)}
-                  disabled={!!loading || activePlan === key}
-                  className="mt-6 w-full rounded-xl bg-brand py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50 transition-colors"
+                <p
+                  className={`mt-6 w-full rounded-xl py-2 text-center text-sm font-medium ${
+                    isActive
+                      ? "bg-brand/10 text-brand-dark"
+                      : "bg-brand text-white"
+                  }`}
                 >
-                  {loading === key
-                    ? "Vent..."
-                    : activePlan === key
-                      ? "Nuværende plan"
-                      : "Vælg plan"}
-                </button>
-              </div>
+                  {isLoading ? "Vent..." : isActive ? "Nuværende plan" : "Vælg plan"}
+                </p>
+              </>
+            );
+
+            if (isActive) {
+              return (
+                <div key={key} className={cardClassName}>
+                  {cardContent}
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleSubscribe(key)}
+                disabled={isDisabled}
+                aria-label={`Vælg ${plan.name}`}
+                className={cardClassName}
+              >
+                {cardContent}
+              </button>
             );
           })}
         </div>
