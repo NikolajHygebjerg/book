@@ -3,7 +3,9 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { getPricingSettings } from "@/lib/pricing-settings";
+import { getAdminAnalytics } from "@/lib/admin-analytics";
 import { AdminPricingEditor } from "@/components/admin/admin-pricing-editor";
+import { AdminAnalyticsPanel } from "@/components/admin/admin-analytics-panel";
 import {
   AdminGoogleCalendarPanel,
 } from "@/components/admin/admin-google-calendar-panel";
@@ -39,7 +41,10 @@ export default async function AdminPage({
   const params = await searchParams;
   const googleMessage = googleCalendarStatusMessage(params.google);
 
-  const pricing = await getPricingSettings();
+  const [pricing, analytics] = await Promise.all([
+    getPricingSettings(),
+    getAdminAnalytics(),
+  ]);
 
   return (
     <div className="px-4 py-12">
@@ -48,6 +53,7 @@ export default async function AdminPage({
           <h1 className="text-2xl font-bold text-stone-900 mb-2">Administration</h1>
           <p className="text-stone-500">Styr priser, kalender og abonnementer.</p>
         </div>
+        <AdminAnalyticsPanel analytics={analytics} pricing={pricing} />
         <AdminGoogleCalendarPanel initialMessage={googleMessage} />
         <AdminPricingEditor initialPricing={pricing} />
       </div>
