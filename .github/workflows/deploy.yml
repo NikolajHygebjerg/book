@@ -20,23 +20,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check Vercel secrets
+        id: vercel-secrets
+        run: |
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ] && [ -n "${{ secrets.VERCEL_ORG_ID }}" ] && [ -n "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Vercel secrets mangler i GitHub Actions. Deployment sker via Vercel Git-integration, eller tilføj VERCEL_TOKEN, VERCEL_ORG_ID og VERCEL_PROJECT_ID under Settings → Secrets and variables → Actions."
+          fi
+
       - name: Setup Node.js
+        if: steps.vercel-secrets.outputs.configured == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
 
       - name: Install dependencies
+        if: steps.vercel-secrets.outputs.configured == 'true'
         run: npm ci
 
       - name: Generate Prisma client
+        if: steps.vercel-secrets.outputs.configured == 'true'
         run: npx prisma generate
 
       - name: Pull Vercel environment
+        if: steps.vercel-secrets.outputs.configured == 'true'
         run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build
+        if: steps.vercel-secrets.outputs.configured == 'true'
         run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to production
+        if: steps.vercel-secrets.outputs.configured == 'true'
         run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
