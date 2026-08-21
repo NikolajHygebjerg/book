@@ -20,18 +20,35 @@ export async function GET() {
     return NextResponse.json({ error: "Ingen adgang" }, { status: 403 });
   }
 
-  const integration = await getGoogleCalendarIntegration();
-  const connected = await isGoogleCalendarConnected();
+  try {
+    const integration = await getGoogleCalendarIntegration();
+    const connected = await isGoogleCalendarConnected();
 
-  return NextResponse.json({
-    oauthConfigured: isGoogleOAuthConfigured(),
-    connected,
-    calendarId: integration?.calendarId ?? null,
-    calendarSummary: integration?.calendarSummary ?? null,
-    syncBookingsEnabled: integration?.syncBookingsEnabled ?? true,
-    connectedByEmail: integration?.connectedByEmail ?? null,
-    updatedAt: integration?.updatedAt?.toISOString() ?? null,
-  });
+    return NextResponse.json({
+      oauthConfigured: isGoogleOAuthConfigured(),
+      connected,
+      calendarId: integration?.calendarId ?? null,
+      calendarSummary: integration?.calendarSummary ?? null,
+      syncBookingsEnabled: integration?.syncBookingsEnabled ?? true,
+      connectedByEmail: integration?.connectedByEmail ?? null,
+      updatedAt: integration?.updatedAt?.toISOString() ?? null,
+    });
+  } catch (error) {
+    console.error("Google calendar status error:", error);
+    return NextResponse.json(
+      {
+        oauthConfigured: isGoogleOAuthConfigured(),
+        connected: false,
+        calendarId: null,
+        calendarSummary: null,
+        syncBookingsEnabled: true,
+        connectedByEmail: null,
+        updatedAt: null,
+        dbError: true,
+      },
+      { status: 200 }
+    );
+  }
 }
 
 export async function PATCH(request: Request) {

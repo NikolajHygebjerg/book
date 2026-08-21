@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { getPricingSettings } from "@/lib/pricing-settings";
 import { AdminPricingEditor } from "@/components/admin/admin-pricing-editor";
 import {
   AdminGoogleCalendarPanel,
-  googleCalendarStatusMessage,
 } from "@/components/admin/admin-google-calendar-panel";
+import { googleCalendarStatusMessage } from "@/lib/google-calendar/status-messages";
 
 export default async function AdminPage({
   searchParams,
@@ -14,8 +15,25 @@ export default async function AdminPage({
   searchParams: Promise<{ google?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.email || !isAdminEmail(session.user.email)) {
+  if (!session?.user?.email) {
     redirect("/");
+  }
+
+  if (!isAdminEmail(session.user.email)) {
+    return (
+      <div className="px-4 py-20 text-center">
+        <h1 className="text-xl font-semibold text-stone-900">Ingen adgang</h1>
+        <p className="mt-2 text-stone-500">
+          Admin-siden kræver kontoen {process.env.ADMIN_EMAIL ?? "nikolaj@idevaerket.dk"}.
+        </p>
+        <Link
+          href="/"
+          className="mt-6 inline-block rounded-xl bg-brand px-6 py-2 text-white hover:bg-brand-dark"
+        >
+          Til forsiden
+        </Link>
+      </div>
+    );
   }
 
   const params = await searchParams;

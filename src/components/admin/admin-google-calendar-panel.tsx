@@ -11,6 +11,7 @@ type GoogleCalendarStatus = {
   syncBookingsEnabled: boolean;
   connectedByEmail: string | null;
   updatedAt: string | null;
+  dbError?: boolean;
 };
 
 const STATUS_MESSAGES: Record<string, string> = {
@@ -139,6 +140,13 @@ export function AdminGoogleCalendarPanel({ initialMessage }: AdminGoogleCalendar
             </p>
           )}
 
+          {"dbError" in status && status.dbError && (
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+              Database-migration mangler. Kør{" "}
+              <code className="rounded bg-white px-1">npx prisma migrate deploy</code> på serveren.
+            </p>
+          )}
+
           {status.connected ? (
             <>
               <div className="rounded-xl bg-stone-50 px-4 py-3 text-sm space-y-1">
@@ -190,9 +198,4 @@ export function AdminGoogleCalendarPanel({ initialMessage }: AdminGoogleCalendar
       ) : null}
     </section>
   );
-}
-
-export function googleCalendarStatusMessage(code: string | null | undefined): string | null {
-  if (!code) return null;
-  return STATUS_MESSAGES[code] ?? null;
 }
