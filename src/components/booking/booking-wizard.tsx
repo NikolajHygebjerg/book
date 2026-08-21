@@ -33,6 +33,13 @@ const STEPS = ["Timer", "Personer", "Dato", "Tilvalg", "Oversigt"] as const;
 
 const basisPlan = (pricing: PricingSettings) => pricing.subscriptions.BASIS;
 
+function formatUpgradePlanBenefit(hoursPerMonth: number | "unlimited"): string {
+  if (hoursPerMonth === "unlimited") {
+    return "ubegrænset timer om måneden";
+  }
+  return `${hoursPerMonth} timer om måneden`;
+}
+
 export function BookingWizard({
   subscriptionHoursAvailable = 0,
   hasActiveSubscription = false,
@@ -490,8 +497,8 @@ export function BookingWizard({
                             subscriptionHoursAvailable === 1 ? "time" : "timer"
                           } tilbage, men booker ${hours} ${
                             hours === 1 ? "time" : "timer"
-                          }. Opgrader til ${upgradePlanPricing.name} (${formatDKK(upgradePlanPricing.monthlyPriceOre)}/md) og gennemfør bookingen uden at betale for de ekstra timer.`
-                        : `Du har brugt alle dine abonnementstimer denne måned. Opgrader til ${upgradePlanPricing.name} (${formatDKK(upgradePlanPricing.monthlyPriceOre)}/md) og gennemfør bookingen uden at betale for timerne.`}
+                          }. Opgrader til ${upgradePlanPricing.name} som giver ${formatUpgradePlanBenefit(upgradePlanPricing.hoursPerMonth)} (${formatDKK(upgradePlanPricing.monthlyPriceOre)}/md) og gennemfør bookingen uden at betale for de ekstra timer. Du kan altid nedgradere igen.`
+                        : `Du har brugt alle dine abonnementstimer denne måned. Opgrader til ${upgradePlanPricing.name} som giver ${formatUpgradePlanBenefit(upgradePlanPricing.hoursPerMonth)} (${formatDKK(upgradePlanPricing.monthlyPriceOre)}/md) og gennemfør bookingen uden at betale for timerne. Du kan altid nedgradere igen.`}
                     </p>
                     <button
                       type="button"
