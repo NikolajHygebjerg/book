@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
-import Link from "next/link";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { AuthProvider } from "@/components/providers/auth-provider";
 
 const geist = Geist({
@@ -40,14 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AuthProvider>
           <Header />
           <main className="flex-1">{children}</main>
-          <footer className="border-t border-stone-100 bg-white py-6 text-center text-sm text-stone-500">
-            <p>Ravnen 5, 8410 Rønde</p>
-            <p className="mt-2">
-              <Link href="/privatlivspolitik" className="hover:text-stone-700 transition-colors">
-                Privatlivspolitik
-              </Link>
-            </p>
-          </footer>
+          <SiteFooter />
         </AuthProvider>
       </body>
     </html>
