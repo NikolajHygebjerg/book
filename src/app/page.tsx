@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { Logo } from "@/components/layout/logo";
 import { AppAboutSection } from "@/components/layout/app-about-section";
@@ -6,7 +6,6 @@ import { AuthScreen } from "@/components/auth/auth-screen";
 
 export default async function HomePage() {
   const session = await auth();
-  if (session) redirect("/book");
 
   return (
     <div className="flex flex-1 flex-col items-center px-4 py-12">
@@ -20,10 +19,21 @@ export default async function HomePage() {
         <AppAboutSection />
       </div>
 
-      <div className="mt-10 w-full max-w-sm">
-        <h2 className="mb-4 text-center text-lg font-semibold text-stone-900">Log ind</h2>
-        <AuthScreen />
-      </div>
+      {session ? (
+        <div className="mt-10 w-full max-w-sm">
+          <Link
+            href="/book"
+            className="block w-full rounded-xl bg-brand py-3 text-center font-medium text-white hover:bg-brand-dark transition-colors"
+          >
+            Gå til booking
+          </Link>
+        </div>
+      ) : (
+        <div className="mt-10 w-full max-w-sm">
+          <h2 className="mb-4 text-center text-lg font-semibold text-stone-900">Log ind</h2>
+          <AuthScreen />
+        </div>
+      )}
     </div>
   );
 }
