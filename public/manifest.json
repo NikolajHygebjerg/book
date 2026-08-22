@@ -1,7 +1,7 @@
 {
-  "name": "Begejstring — Åbent værksted",
-  "short_name": "Begejstring",
-  "description": "Book tid i keramikværkstedet",
+  "name": "Begejstring booking",
+  "short_name": "Begejstring booking",
+  "description": "Book tid i Begejstrings keramikværksted i Rønde",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

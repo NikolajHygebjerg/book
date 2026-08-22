@@ -11,9 +11,9 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Begejstring — Åbent værksted",
+  title: "Begejstring booking — Åbent værksted",
   description:
-    "Book tid i keramikværkstedet. 10 pladser, døgnet rundt (når der ikke er kurser i værkstedet).",
+    "Begejstring booking: Book tid i keramikværkstedet i Rønde. Medlemmer og gæster kan booke værkstedstid; administrator synkroniserer kurser via Google Kalender.",
   manifest: "/manifest.json",
   icons: {
     icon: "/logo.png",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Begejstring",
+    title: "Begejstring booking",
   },
 };
 
